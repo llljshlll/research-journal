@@ -1,4 +1,4 @@
-# MV-Adapter: Multi-view Consistent Image Generation Made Easy
+# Skyfall-GS: Synthesizing Immersive 3D Urban Scenes from Satellite Imagery
 
 GS 와 diffusion 의 조합 논문  
 우리와 같이 diffusion 모델을 쓰면서 GS로 뷰를 재구성하기 위해 논문 읽음  
@@ -40,12 +40,11 @@ diffusion model은 **scene representation이 아니며, image-level supervisor**
 ## 2. Mechanism
 
 Skyfall-GS는 **satellite imagery 기반 3D city reconstruction**을 위해  
-단일 모델이 모든 문제를 해결하려는 대신,  
-역할이 명확히 분리된 **two-stage framework**로 구성된다.
-
-핵심 설계 철학은  
+ **two-stage framework**로 구성
+  
+  
 **3D scene representation은 3DGS가 담당하고,  
-diffusion model은 image-level supervision만 제공한다**는 점이다.
+diffusion model은 image-level supervision만 제공**
 
 
 핵심은 다음 두 가지 구성 요소로 이뤄짐
@@ -96,10 +95,7 @@ Satellite imagery는 서로 다른 **date, season, time of day**에서 촬영되
 이러한 appearance variation은 3DGS가 geometry를 학습하는 과정에서  
 불필요한 혼란을 유발하며, geometry 수렴을 불안정하게 만든다.
 
-Appearance Modeling의 목적은  
-**조명·날짜·계절에 따른 차이를 geometry로부터 분리(disentangle)**하여,  
-실제 **underlying albedo / material appearance**는 유지하면서  
-image-specific appearance 변화만을 별도의 latent로 흡수하는 것이다.
+Appearance Modeling의 목적은 Satellite imagery만으로 최대한 안정적인 3DGS 초기화
 
 ---
 
@@ -111,9 +107,9 @@ image-specific appearance 변화만을 별도의 latent로 흡수하는 것이�
 
 #### Implementation
 
-Skyfall-GS는 **WildGaussians 스타일**의 appearance modeling을 채택하여,  
+Skyfall-GS는 **WildGaussians 스타일**의 appearance modeling을 사용하여,  
 다음 세 가지 정보를 MLP에 입력하고  
-**affine color transform parameters**를 예측한다.
+**affine color transform parameters**를 예측함
 
 
 ##### (1) Per-image embedding
@@ -138,7 +134,7 @@ Skyfall-GS는 **WildGaussians 스타일**의 appearance modeling을 채택하여
 
 
 ##### (3) Base color (SH DC component)
-- 각 Gaussian의 **0th-order Spherical Harmonics (DC term)**를 base color로 사용
+- 각 Gaussian의 **0th-order Spherical Harmonics**를 base color로 사용
 - view-dependent effect가 제거된, 가장 기본적인 color representation
 
 
@@ -179,7 +175,7 @@ c_final = γ · c_view-dependent + β
 ### 2.1.2 Opacity Regularization
 
 Satellite imagery는 지상에서 수백 km 떨어진 위치에서 촬영되기 때문에,  
-camera position이 변해도 **object 간 relative position 변화(parallax)**가 거의 발생하지 않는다.  
+camera position이 변해도 **object 간 relative position 변화**가 거의 발생하지 않는다.  
 즉, 3D reconstruction에서 핵심적인 **depth cue를 parallax로부터 얻기 어려운 환경**이다.
 
 이러한 조건에서 3DGS를 photometric loss만으로 학습하면,  
