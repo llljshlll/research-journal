@@ -73,7 +73,7 @@ Diffusion model의 역할 :
 
 ### 2.1.1 Appearance Modeling
 
-![Appearance inconsistency in satellite imagery across seasons and acquisition times](../../docs/assets/papers/skyfall-gs/satellite_appearance_issue.png)
+![Appearance inconsistency in satellite imagery across seasons and acquisition times](../../docs/assets/papers/skyfall-gs/satellite_appearance_issue.png)  
 *Source: Satellite imagery examples illustrating seasonal and illumination-induced appearance variation*
 
 위성 영상 간 촬영 시점·계절 차이로 인한 appearance 불일치 문제.
@@ -127,7 +127,7 @@ depth cue 확보가 어려운 조건.
 실제 surface와 무관한 위치에 Gaussian이 배치되는
 **floaters** 현상 발생.
 
-![Floating Gaussian artifacts in 3D Gaussian Splatting reconstructions](../../docs/assets/papers/skyfall-gs/floaters_3dgs.png)
+![Floating Gaussian artifacts in 3D Gaussian Splatting reconstructions](../../docs/assets/papers/skyfall-gs/floaters_3dgs.png)  
 *Source: Example of floating artifacts commonly observed in NeRF / 3DGS reconstructions*
 
 
@@ -221,7 +221,7 @@ Stage 2의 특징:
 
 
 ### 2.2.1 Diffusion Refinement (FlowEdit + FLUX.1)
-![Algorithm 1: Iterative Dataset Update](../../docs/assets/papers/skyfall-gs/alg1_idu.png)
+![Algorithm 1: Iterative Dataset Update](../../docs/assets/papers/skyfall-gs/alg1_idu.png)  
 *Source: Skyfall-GS (Lee et al., 2025), Algorithm 1*
 
 Stage 2에서 diffusion model은
@@ -300,7 +300,7 @@ diffusion의 stochastic hallucination이 평균화되며,
 
 
 ### 2.2.3 Curriculum Learning for Camera Angles
-![Curriculum on camera angle](../../docs/assets/papers/skyfall-gs/fig4_curriculum.png)
+![Curriculum on camera angle](../../docs/assets/papers/skyfall-gs/fig4_curriculum.png)  
 *Source: Skyfall-GS (Lee et al., 2025), Fig. 4*
 
 Stage 2에서 diffusion refinement를
