@@ -16,14 +16,14 @@ multi-view 전반에서 **reference image의 시각적 일관성(visual consiste
 
 MV-Adapter는 기존 **Stable Diffusion (SD2.1 / SDXL)** 구조를 변경하지 않고,  
 **multi-view consistency**를 학습하기 위한 모듈(adapter)만 추가하는 방식으로 동작함 
-<img src="../../docs/assets/mv-adapter/insert.png" alt="Decoupled Attention Layers" width=600> 
+<img src="../../docs/assets/papers/mv-adapter/insert.png" alt="Decoupled Attention Layers" width=600> 
 
 핵심은 다음 두 가지 구성 요소로 이뤄짐
 
 1. **Condition Guider** – position/geometry condition을 인코딩하여 UNet 내부에 주입  
 2. **Decoupled Attention Layers** – 기존 attention 구조를 병렬화하여  
    multi-view, image, text 정보를 동시에 처리
-<img src="../../docs/assets/mv-adapter/pipeline.png" alt="Decoupled Attention Layers" width=600> 
+<img src="../../docs/assets/papers/mv-adapter/pipeline.png" alt="Decoupled Attention Layers" width=600> 
 
 ---
 ### 2.1 Condition Guider
@@ -33,7 +33,7 @@ geometry-conditioned feature로 변환하고,
 **U-Net Down Block 내부의 모든 ResNet Block 출력에 직접 더해주는 (Residual Add)** 모듈  
 각 view의 구조적 정보를 강하게 보존하면서 multi-view 이미지 생성을 지원해주는 역할을 함
 
-<img src="../../docs/assets/mv-adapter/UNet.png" alt="Decoupled Attention Layers"> 
+<img src="../../docs/assets/papers/mv-adapter/UNet.png" alt="Decoupled Attention Layers"> 
 
 #### 입력
 - **Position Map (3채널)**  
@@ -70,7 +70,7 @@ Feature_out = Feature_out + ConditionFeature
 MV-Adapter의 핵심은 **기존 self-attention 구조를 duplicate하고 parallelize** 하는 것
 
 #### 구성 요소
-<img src="../../docs/assets/mv-adapter/pipeline.png" alt="Decoupled Attention Layers" width=600> 
+<img src="../../docs/assets/papers/mv-adapter/pipeline.png" alt="Decoupled Attention Layers" width=600> 
 
 | Type | Query | Key/Value | 목적 |
 |------|--------|------------|------|
@@ -89,7 +89,7 @@ Multi-View Attention, Image Cross-Attention은 Spatial Self-Attention 블록을 
 기존 Stable Diffusion의 attention은 **serial residual connection** 구조로 되어 있지만,  
 MV-Adapter는 이를 **parallel residual structure**로 변경  
 
-<img src="../../docs/assets/mv-adapter/sd_layer.png" alt="Decoupled Attention Layers" width=600>
+<img src="../../docs/assets/papers/mv-adapter/sd_layer.png" alt="Decoupled Attention Layers" width=600>
 
 
 - 기존 Stable Diffusion의 UNet에서 나온 latent feature를 모든 attention 블록(Self, Multi-view, Image Cross, Text Cross)이 동시에 공유하므로,  
@@ -115,7 +115,7 @@ MV-Adapter의 파라미터만 업데이트함
 ### 2.4 Inference Pipeline
 
 추론 시에는 다음 순서로 작동  
-<img src="../../docs/assets/mv-adapter/pipeline.png" alt="Decoupled Attention Layers" width=600>
+<img src="../../docs/assets/papers/mv-adapter/pipeline.png" alt="Decoupled Attention Layers" width=600>
 1. Text prompt, reference image, camera/geometry map 입력  
 - image reference
    - vae로 latent 생성
