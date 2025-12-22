@@ -69,6 +69,8 @@ Diffusion model의 역할 :
   - ground-level view에서 불완전한 geometry.
   - facades 및 occluded regions의 복원 실패.
 
+초기에는 Satellite SfM(Structure from Motion)를 통해 초기 3D구조를 예측
+
 ---
 
 ### 2.1.1 Appearance Modeling
