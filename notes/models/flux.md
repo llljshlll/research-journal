@@ -32,7 +32,8 @@ Output
 ```
 ## 2. Architecture
 ![FLUX Architecture](../../docs/assets/models/flux/FLUX_architecture.png)
-1. Input Section  
+1. Input Section
+
 | Symbol | Description |  
 |------|------------|  
 | **img** | VAE Encoder를 통해 latent space로 변환된 이미지 토큰 |  
@@ -44,6 +45,7 @@ Output
 | **txt_ids** | 텍스트 토큰의 위치 인덱스 (used in RoPE) |  
 
 2. Main Architecture Components
+
 | Symbol / Block | Description |
 |---------------|------------|
 | **CAT** | Concatenation |
@@ -53,6 +55,7 @@ Output
 | **vec** | timestep 및 txt 전역 정보를 결합한 conditioning 벡터 |
 
 3. Modulation & Conditioning
+
 | Symbol | Description |
 |------|------------|
 | **Mod** | vec를 입력으로 받아 feature-wise modulation을 수행하는 유닛 |
@@ -63,6 +66,7 @@ Output
 | **Unsqueeze** | modulation 값을 모든 토큰 차원에 브로드캐스트하기 위한 차원 확장 |
 
 4. Spatial & Dimensional Notation
+
 | Symbol | Meaning |
 |------|--------|
 | **t** | 참조 인덱스를 구분하는 오프셋 |
