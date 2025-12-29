@@ -37,7 +37,7 @@ Output
 | Symbol | Description |  
 |------|------------|  
 | **img** | VAE Encoder를 통해 latent space로 변환된 이미지 토큰 |  
-| **timesteps (t)** | diffusion 과정의 단계 나타냄. Sinusoidal Timestep Embedding을 통해 벡터화됨 |  
+| **timesteps** | diffusion 과정의 단계 나타냄. Sinusoidal Timestep Embedding을 통해 벡터화됨 |  
 | **guidance** | 텍스트 조건을 얼마나 강하게 반영할지 결정하는 가이드 스케일 |  
 | **y** | CLIP 텍스트 인코더의 출력 (Global 텍스트 정보) |  
 | **txt** | T5-XXL 텍스트 인코더의 출력 (시퀀스 단위 의미 정보) |  
@@ -59,9 +59,9 @@ Output
 | Symbol | Description |
 |------|------------|
 | **Mod** | vec를 입력으로 받아 feature-wise modulation을 수행하는 유닛 |
-| **α (gate)** | 연산 결과의 기여도를 조절하는 게이팅 파라미터 |
-| **β (shift)** | feature 값을 평행 이동시키는 bias 항 |
-| **γ (scale)** | feature 강도를 조절하는 scaling 계수 |
+| **α (gate**) | 연산 결과의 기여도를 조절하는 게이팅 파라미터 |
+| **β (shift**) | feature 값을 평행 이동시키는 bias 항 |
+| **γ (scale**) | feature 강도를 조절하는 scaling 계수 |
 | **Chunk** | 하나의 modulation 벡터를 (α, β, γ)로 분할 |
 | **Unsqueeze** | modulation 값을 모든 토큰 차원에 브로드캐스트하기 위한 차원 확장 |
 
