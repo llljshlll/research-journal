@@ -32,16 +32,16 @@ Output
 ```
 ## 2. Architecture
 ![FLUX Architecture](../../docs/assets/models/flux/FLUX_architecture.png)
-1. Input Section
-| Symbol | Description |
-|------|------------|
-| **img** | VAE Encoder를 통해 latent space로 변환된 이미지 토큰 |
-| **timesteps (t)** | diffusion 과정의 단계 나타냄. Sinusoidal Timestep Embedding을 통해 벡터화됨 |
-| **guidance** | 텍스트 조건을 얼마나 강하게 반영할지 결정하는 가이드 스케일 |
-| **y** | CLIP 텍스트 인코더의 출력 (Global 텍스트 정보) |
-| **txt** | T5-XXL 텍스트 인코더의 출력 (시퀀스 단위 의미 정보) |
-| **img_ids** | 이미지 토큰의 공간 좌표 (h, w) 및 시간 인덱스 (used in RoPE) |
-| **txt_ids** | 텍스트 토큰의 위치 인덱스 (used in RoPE) |
+1. Input Section  
+| Symbol | Description |  
+|------|------------|  
+| **img** | VAE Encoder를 통해 latent space로 변환된 이미지 토큰 |  
+| **timesteps (t)** | diffusion 과정의 단계 나타냄. Sinusoidal Timestep Embedding을 통해 벡터화됨 |  
+| **guidance** | 텍스트 조건을 얼마나 강하게 반영할지 결정하는 가이드 스케일 |  
+| **y** | CLIP 텍스트 인코더의 출력 (Global 텍스트 정보) |  
+| **txt** | T5-XXL 텍스트 인코더의 출력 (시퀀스 단위 의미 정보) |  
+| **img_ids** | 이미지 토큰의 공간 좌표 (h, w) 및 시간 인덱스 (used in RoPE) |  
+| **txt_ids** | 텍스트 토큰의 위치 인덱스 (used in RoPE) |  
 
 2. Main Architecture Components
 | Symbol / Block | Description |
