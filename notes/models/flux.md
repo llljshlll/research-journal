@@ -195,23 +195,12 @@ P.E도 RoPE Attention을 이용해서 들어가기 때문에, 블록마다 서�
 +Skyfall-GS에서는 diffusion을 완전한 생성기가 아니라 구조가 이미 주어진 이미지의 노이즈 제거 및 정제 단계로 사용함
 저노이즈, 저스텝 조건에서는 전역 구조를 강하게 유지하는 Transformer 기반 diffusion이 UNet 기반 모델보다 안정적일 수 있음
 
-+ reference image와 noise image가 항상 concat되어 img형태로 함께 사용되다가, 마지막 SingleStream Block을 지나고 다음 단계로 에측된 노이즈를 전달할 때에는 reference image가 슬라이싱되어 버려짐. 그리고 다음 단계에서는 다시 처음 준비된 latent 형태로 noise image와 concat 되어 들어감
++reference image와 noise image가 항상 concat되어 img형태로 함께 사용되다가, 마지막 SingleStream Block을 지나고 다음 단계로 에측된 노이즈를 전달할 때에는 reference image가 슬라이싱되어 버려짐. 그리고 다음 단계에서는 다시 처음 준비된 latent 형태로 noise image와 concat 되어 들어감
 즉, Reference image는 처음 준비된 latent 형태로 매 스텝마다 동일하게 재사용됨
 
 
-해결해야하는 의문
-1. timesteps이랑 guidance가 Sinusoidal timestep embedding으로 들어가는데 이게 뭔지 => sin함수 이용해서 time, guidence 임베딩 시켜주는 거임
-2. 그 이후에 Sinusoidal timestep embedding에서 나온거랑 CLIP에서 나온거랑 다 MLP Emb들어갔다가 더해지는데 이건 뭔지
-3. 사진 속에서는 img가 vae가 아니라 linear를 통과하는거처럼 나오는데 뭐가 맞는지 => 이미 vae에 들어갔다 나온거임
-4. 파라미터 개수
++FLUX.1 기반 모델들은 120억 개, 더 강력해진 FLUX.2 모델들은 240억 개의 파라미터
 
-
-
-
-
-
-- 고해상도에서도 구조적으로 안정적인 이미지 생성(기존 unet based diffusion model은 고해상도에서 구조 붕괴 일어남)
-- transformer diffusion의 실무 기준 제시
 
 
 
