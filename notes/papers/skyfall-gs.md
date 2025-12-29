@@ -74,12 +74,7 @@ Diffusion model의 역할 :
 ---
 
 ### 2.1.1 Appearance Modeling
-
-![Appearance inconsistency in satellite imagery across seasons and acquisition times](../../docs/assets/papers/skyfall-gs/satellite_appearance_issue.png)  
-*Source: Satellite imagery examples illustrating seasonal and illumination-induced appearance variation*
-
 위성 영상 간 촬영 시점·계절 차이로 인한 appearance 불일치 문제.
-
 
 
 각 Gaussian의 색상은 **Spherical Harmonics(SH)** 계수로 표현되며,  
