@@ -142,17 +142,19 @@ Floaters의 특징:
 Skyfall-GS는 floaters를 억제하기 위해
 Gaussian의 **opacity (α)** 에 대해 **binary entropy regularization** 적용.
 
-- entropy \( H(\alpha) \):
-  - \( \alpha = 0.5 \) 에서 최대.
-  - \( \alpha \to 0 \) 또는 \( \alpha \to 1 \) 로 갈수록 감소.
-- **−H(α)** 를 loss로 사용하여 minimize.
 
-Regularization 효과:
-- \( \alpha \approx 0.2 \sim 0.4 \) 범위의
-  **중간 opacity Gaussian**에 강한 penalty 부여.
-- Gaussian의 opacity가 학습 과정에서 이진화:
-  - **α ≈ 1**: 실제 surface에 대응.
-  - **α ≈ 0**: 제거 대상.
+- entropy H(α)는
+  α = 0.5 일 때 최대값을 가짐.
+  H(α) = − α log α − (1 − α) log (1 − α)
+- α가 0 또는 1에 가까워질수록
+  entropy 값은 감소.
+- **−H(α)** 를 loss로 사용하여 중간 opacity 값을 갖는 Gaussian에 강한 penalty를 부여.
+
+- 중간 opacity 영역에 머무는 Gaussian은 억제됨.
+- Gaussian의 opacity는 학습 과정에서
+  두 가지 상태로 분리됨:
+  - α = 1: 실제 surface에 대응하는 Gaussian.
+  - α = 0: 제거 대상 Gaussian.
 
 의미 없는 Gaussian(floaters)의 기여를 억제하고,
 Stage 1에서 안정적인 coarse geometry 형성.
@@ -211,7 +213,7 @@ satellite view 기준의 coarse geometry만을 복원한 상태.
 
 Stage 2에서는
 **diffusion 기반 image synthesis**와
-**Iterative Dataset Update (IDU)**를 통해
+**Iterative Dataset Update (IDU**)를 통해
 보이지 않던 facade 및 occluded region 정보를
 학습 데이터 형태로 점진적으로 보완.
 
