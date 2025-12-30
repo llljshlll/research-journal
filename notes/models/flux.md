@@ -8,7 +8,7 @@ FLUX = **Transformer Diffusion** Based Multimodal Generative AI
 복잡한 global 컨텍스트를 보다 효과적으로 모델링함  
   
 >> FLUX는 token-based Transformer diffusion 구조로 인해 UNet 기반 ControlNet이 전제하는 spatially-aligned feature injection 방식과는 구조적으로 잘 맞지 않으며, 이로 인해 geometry-aware conditioning에는 상대적으로 불리함  
->> (controlNet은 UNet의 같은 위치 feature에 영향을 줘야하는데, FLUX는 픽셀이 아니라 token 단위로 처리하기 때문에 공간 제약을 둘 수 없음)
+(controlNet은 UNet의 같은 위치 feature에 영향을 줘야하는데, FLUX는 픽셀이 아니라 token 단위로 처리하기 때문에 공간 제약을 둘 수 없음)
 
 ## 2. Architecture
 ![FLUX Architecture](../../docs/assets/models/flux/FLUX_architecture.png)
