@@ -289,7 +289,7 @@ diffusion의 stochastic hallucination이 평균화되며,
 
 ### 2.2.3 Curriculum Learning for Camera Angles
 ![Curriculum on camera angle](../../docs/assets/papers/skyfall-gs/fig4_curriculum.png)  
-![Curriculum on camera angle](../../docs/assets/papers/skyfall-gs/curriculum.png)  
+![Curriculum on camera angle](../../docs/assets/papers/skyfall-gs/Curriculum.png)  
 
 Stage 2에서 diffusion refinement를
 처음부터 ground-level view에 적용할 경우,
