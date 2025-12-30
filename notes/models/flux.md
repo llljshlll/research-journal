@@ -64,7 +64,7 @@ Input
 
 Process
 ├── Text Encoding → T5 Text Encoder 및 CLIP
-├── Image Encoding → VAE Encoder → 16개 채널의 Latent Space z 로 변환
+├── Image Encoding → VAE Encoder → 16개 채널의 Latent code z 로 변환
 ├── Mechanism (Transformer 기반):
     ├── Double Stream Blocks: 텍스트와 이미지 토큰을 개별 가중치로 병렬 처리
     ├── Single Stream Blocks: 결합된 시퀀스를 통합 처리하여 효율성 극대화 (38개 블록)
