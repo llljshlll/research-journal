@@ -147,7 +147,6 @@ Stage 1에서 안정적인 coarse geometry 형성.
 ---
 
 ### 2.1.3 Pseudo-camera Depth Supervision
-![Pseudo_Camera in 3D Gaussian Splatting reconstructions](../../docs/assets/papers/skyfall-gs/Psudo_Camera.png)  
 Satellite imagery 환경에서는 카메라가 지상으로부터 매우 멀리 위치하여,
 view 변화에 따른 **effective parallax**가 거의 발생하지 않음.
 이로 인해 photometric supervision만으로는
