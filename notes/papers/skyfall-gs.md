@@ -18,15 +18,12 @@ GS 와 diffusion 의 조합 논문
 - 기존 **NeRF / 3D Gaussian Splatting** 계열 방법: satellite view에서 학습된 표현의 low-altitude 및 ground-level view로의 일반화 실패.
 
 결과적으로, 위성 영상 supervision만으로는 큰 시점 변화에 대해 기하적·외관적으로 일관된 3D 도시 표현을 학습하기 어려운 문제 발생
+
 ---
 
 ## 2. Mechanism
 
-Skyfall-GS는 **satellite imagery 기반 3D city reconstruction**을 위한  
-**two-stage framework**로 구성.
-
-**3D scene representation은 3D Gaussian Splatting(3DGS)이 담당하며,  
-diffusion model은 image-level supervision만 제공하는 구조.**
+**satellite imagery 기반 3D city reconstruction**을 위해 **two-stage framework**로 구성.
 
 ![Overall pipeline of Skyfall-GS](../../docs/assets/papers/skyfall-gs/fig3_pipeline.png)
 
@@ -36,11 +33,7 @@ diffusion model은 image-level supervision만 제공하는 구조.**
 
 ### Stage 1 — Initial Reconstruction (3DGS-based)
 - satellite images 입력을 기반으로 **initial 3D Gaussian scene** 생성.
-- photometric supervision을 통한
-  - roof surfaces
-  - ground planes
-  중심의 **coarse geometry 복원**.
-- 생성된 3DGS의 한계:
+- Stage 1에서는 색 기반 supervision을 사용하므로, 위성영상에서 잘 관측되는 roof와 ground를 중심으로 장면의 대략적인 형태만 복원
   - ground-level view에서 불완전한 geometry.
   - facades 및 occluded regions의 복원 실패.
 
@@ -53,6 +46,8 @@ diffusion model은 image-level supervision만 제공하는 구조.**
   - 새로운 supervision data로 사용.
   - 3DGS 재학습에 활용.
 - 위 과정을 **Iterative Dataset Update (IDU)** 방식으로 반복.
+- **3D scene representation은 3D Gaussian Splatting(3DGS)이 담당하며,  
+diffusion model은 image-level supervision만 제공하는 구조.**
 
 Diffusion model의 역할 :
 - 3D geometry를 직접 생성하거나 수정하지 않음.
@@ -63,22 +58,21 @@ Diffusion model의 역할 :
 ## 2.1 Stage 1 — Initial Reconstruction (3DGS-based)
 
 - satellite images 입력을 기반으로 한 **initial 3D Gaussian scene 생성**.
-- photometric supervision을 통한 roof surfaces 및 ground planes 중심의 **coarse geometry 복원**.
-- Stage 1에서 학습된 3DGS의 특성:
-  - top-down 및 high-altitude view에서 상대적으로 안정적인 구조.
-  - ground-level view에서 불완전한 geometry.
-  - facades 및 occluded regions의 복원 실패.
+- photometric supervision을 통한 roof surfaces 및 ground planes 중심의 **coarse geometry 복원**..
 
 초기에는 Satellite SfM(Structure from Motion)를 통해 초기 3D구조를 예측
 
 ---
 
 ### 2.1.1 Appearance Modeling
-위성 영상 간 촬영 시점·계절 차이로 인한 appearance 불일치 문제.
+위성 영상 간 촬영 시점·계절 차이로 인한 appearance 불일치 문제.  
+색 변화는 appearance MLP가 담당하고, geometry는 구조 학습에만 사용되는 분리 구조 사용.  
 
-
-각 Gaussian의 색상은 **Spherical Harmonics(SH)** 계수로 표현되며,  
-색 변화는 appearance MLP가 담당하고, geometry는 구조 학습에만 사용되는 분리 구조 사용.
+```
+geometry ───────────────▶ 구조 유지
+           │
+           └─ appearance MLP ─▶ 색 보정
+```
 
 Appearance는 다음 세 입력으로 구성.
 
@@ -103,9 +97,6 @@ Appearance conditioning 연산 흐름:
   - color offset **Δc**
 - 최종 색상 보정:
   - **c' = c · m + Δc**
-
-Image-dependent appearance 변화는 scale과 offset으로만 반영되며,  
-base color(SH DC)는 geometry와 정렬된 상태로 유지.
 
 Appearance variation과 geometry 최적화 간 간섭 최소화.  
 Multi-date satellite imagery 환경에서 Stage 1 학습 안정성 확보.
@@ -139,15 +130,13 @@ Gaussian의 **opacity (α)** 에 대해 **binary entropy regularization** 적용
 
 
 - entropy H(α)는
-  α = 0.5 일 때 최대값을 가짐.
-  H(α) = − α log α − (1 − α) log (1 − α)
-- α가 0 또는 1에 가까워질수록
-  entropy 값은 감소.
+  α = 0.5 일 때 최대값을 가짐.  
+  H(α) = − α log α − (1 − α) log (1 − α)  
+- α가 0 또는 1에 가까워질수록 entropy 값은 감소.
 - **−H(α)** 를 loss로 사용하여 중간 opacity 값을 갖는 Gaussian에 강한 penalty를 부여.
 
 - 중간 opacity 영역에 머무는 Gaussian은 억제됨.
-- Gaussian의 opacity는 학습 과정에서
-  두 가지 상태로 분리됨:
+- Gaussian의 opacity는 학습 과정에서 두 가지 상태로 분리됨:  
   - α = 1: 실제 surface에 대응하는 Gaussian.
   - α = 0: 제거 대상 Gaussian.
 
@@ -158,7 +147,7 @@ Stage 1에서 안정적인 coarse geometry 형성.
 ---
 
 ### 2.1.3 Pseudo-camera Depth Supervision
-
+![Pseudo_Camera in 3D Gaussian Splatting reconstructions](../../docs/assets/papers/skyfall-gs/Pseudo_Camera.png)  
 Satellite imagery 환경에서는 카메라가 지상으로부터 매우 멀리 위치하여,
 view 변화에 따른 **effective parallax**가 거의 발생하지 않음.
 이로 인해 photometric supervision만으로는
@@ -300,7 +289,7 @@ diffusion의 stochastic hallucination이 평균화되며,
 
 ### 2.2.3 Curriculum Learning for Camera Angles
 ![Curriculum on camera angle](../../docs/assets/papers/skyfall-gs/fig4_curriculum.png)  
-*Source: Skyfall-GS (Lee et al., 2025), Fig. 4*
+![Curriculum on camera angle](../../docs/assets/papers/skyfall-gs/curriculum.png)  
 
 Stage 2에서 diffusion refinement를
 처음부터 ground-level view에 적용할 경우,
@@ -342,65 +331,15 @@ geometry 안정성을 유지한 상태로
 view distribution을 점진적으로 확장.
 
 
-
 ---
 
-## 3. Training
-
-Skyfall-GS는
-satellite imagery 기반 3D reconstruction의 특성을 고려하여,
-**two-stage training pipeline**으로 구성.
-
----
-
-### Stage 1 Training
-
-Stage 1에서는
-satellite images를 입력으로
-3D Gaussian Splatting(3DGS)을 학습.
-
-학습 특징:
-
-- photometric loss 기반 supervision.
-- roof surfaces 및 ground planes 중심의
-  coarse geometry 복원.
-- appearance modeling, opacity regularization,
-  pseudo-camera depth supervision을 통한
-  geometry 안정화.
-
-Stage 1의 목표는
-완전한 3D reconstruction이 아닌,
-Stage 2를 위한 **안정적인 초기 3DGS 생성**.
-
----
-
-### Stage 2 Training
-
-Stage 2에서는
-Stage 1에서 학습된 3DGS를 초기값으로 사용.
-
-훈련 방식:
-
-- 3DGS를 다양한 camera view에서 렌더링.
-- diffusion refinement를 통해
-  렌더링 이미지를 고품질 pseudo supervision으로 변환.
-- refined images를 포함한 dataset으로
-  3DGS 재학습.
-
-이 과정은
-**Iterative Dataset Update (IDU)** 형태로 반복 수행.
-
-Stage 2 학습 특징:
-
-- diffusion model은 고정된 상태로 사용.
-- 3DGS만을 반복적으로 업데이트.
-- multi-sample diffusion 및
-  camera angle curriculum을 통해
-  supervision 안정성 확보.
-
-Training 전반에 걸쳐,
-diffusion은 scene representation이 아닌
-**image-level supervision generator**로만 작동.
+## 3. 정리
+n개의 높은 뷰에서의 시점이 있음 
+Stage 1에서는 n개의 위성 이미지(높은 뷰)로 초기 3DGS를 생성
+stage2에서 높은 뷰 부터 렌더링 -> 디퓨전으로 돌려서 정제된 이미지 만듦(4장)(RGB supervision 생성) -> 뎁스 생성(MoGe 이용해서 depth shape supervision 생성) -> 3DGS 파라미터 θ 학습
+- **RGB loss** : L_rgb = (1-λ) * L1(RGB_GS(θ), RGB_diffusion) + λ * LPIPS/SSIM(RGB_GS(θ), RGB_diffusion)
+- **Depth shape loss** : L_depth = 1 − corr(Depth_GS, Depth_mono)
+로 rgb랑 depth 차이값으로 θ 업데이트
 
 ---
 
