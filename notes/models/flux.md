@@ -7,8 +7,6 @@ FLUX = **Transformer Diffusion** Based Multimodal Generative AI
 => 이에 따라 FLUX는 UNet 대신 Diffusion Transformer(DiT) 계열 아키텍처를 채택하여
 복잡한 global 컨텍스트를 보다 효과적으로 모델링함  
   
-> FLUX는 token-based Transformer diffusion 구조로 인해 UNet 기반 ControlNet이 전제하는 spatially-aligned feature injection 방식과는 구조적으로 잘 맞지 않으며, 이로 인해 geometry-aware conditioning에는 상대적으로 불리함
-> (controlNet은 UNet의 같은 위치 feature에 영향을 줘야하는데, FLUX는 픽셀이 아니라 token 단위로 처리하기 때문에 공간 제약을 둘 수 없음)
 
 ## 2. Architecture
 ![FLUX Architecture](../../docs/assets/models/flux/FLUX_architecture.png)
@@ -188,14 +186,14 @@ Single Stream Block에 진입하기 직전 두 시퀀스는 하나로 Concatenat
 
 
 
-+한 스텝에서 DoubleStream Block과 SingleStream Block에 각각 들어오는 P.E, vec값은 같지만, 
+> 한 스텝에서 DoubleStream Block과 SingleStream Block에 각각 들어오는 P.E, vec값은 같지만, 
 vec는 각 층의 Modulation유닛의 Linear층이 각 블록마다 다르게 학습된 가중치 가지고 있어서 동일한 vec들어오더라도 서로 다른 α,β,γ 파라미터 생성해냄
 P.E도 RoPE Attention을 이용해서 들어가기 때문에, 블록마다 서로 다른 파라미터
 
-+Skyfall-GS에서는 diffusion을 완전한 생성기가 아니라 구조가 이미 주어진 이미지의 노이즈 제거 및 정제 단계로 사용함
+> Skyfall-GS에서는 diffusion을 완전한 생성기가 아니라 구조가 이미 주어진 이미지의 노이즈 제거 및 정제 단계로 사용함
 저노이즈, 저스텝 조건에서는 전역 구조를 강하게 유지하는 Transformer 기반 diffusion이 UNet 기반 모델보다 안정적일 수 있음
 
-+reference image와 noise image가 항상 concat되어 img형태로 함께 사용되다가, 마지막 SingleStream Block을 지나고 다음 단계로 에측된 노이즈를 전달할 때에는 reference image가 슬라이싱되어 버려짐. 그리고 다음 단계에서는 다시 처음 준비된 latent 형태로 noise image와 concat 되어 들어감
+> reference image와 noise image가 항상 concat되어 img형태로 함께 사용되다가, 마지막 SingleStream Block을 지나고 다음 단계로 에측된 노이즈를 전달할 때에는 reference image가 슬라이싱되어 버려짐. 그리고 다음 단계에서는 다시 처음 준비된 latent 형태로 noise image와 concat 되어 들어감
 즉, Reference image는 처음 준비된 latent 형태로 매 스텝마다 동일하게 재사용됨
 
 
@@ -213,7 +211,8 @@ FlowEdit : FLUX.1과 같은 Rectified Flow모델을 활용하여 실제 이미�
     - 원본 이미지의 구조적 특징은 유지하면서 텍스트 프롬프트에 명시된 부분만 정확하게 바꾸는 능력"**이 탁월
 
 
-
+> FLUX는 token-based Transformer diffusion 구조로 인해 UNet 기반 ControlNet이 전제하는 spatially-aligned feature injection 방식과는 구조적으로 잘 맞지 않으며, 이로 인해 geometry-aware conditioning에는 상대적으로 불리함  
+> (controlNet은 UNet의 같은 위치 feature에 영향을 줘야하는데, FLUX는 픽셀이 아니라 token 단위로 처리하기 때문에 공간 제약을 둘 수 없음)  
 
 
 
