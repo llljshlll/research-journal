@@ -3,9 +3,9 @@
 ## 1. Overview
 FLUX = **Transformer Diffusion** Based Multimodal Generative AI
 ![Compare Unet to DiT](../../docs/assets/models/flux/UNet_DiT.png)
-- 기존의 UNet architecture는 convolution 연산의 특성상 local context를 모델링하는데 강점이 있지만, global context를 이해하는데 한계가 있음
-=> 그래서 FLUX는 UNet 대신 Diffusion Transformer(DiT) 계열 아키텍처를 채택하여
-global 컨텍스트를 보다 효과적으로 모델링함
+기존의 UNet architecture는 convolution 연산의 특성상 local context를 모델링하는데 강점이 있지만, global context를 이해하는데 한계가 있음
+=> 이에 따라 FLUX는 UNet 대신 Diffusion Transformer(DiT) 계열 아키텍처를 채택하여
+복잡한 global 컨텍스트를 보다 효과적으로 모델링함
 
 ** FLUX는 token-based Transformer diffusion 구조로 인해 UNet 기반 ControlNet이 전제하는 spatially-aligned feature injection 방식과는 구조적으로 잘 맞지 않으며, 이로 인해 geometry-aware conditioning에는 상대적으로 불리함  
 (controlNet은 UNet의 같은 위치 feature에 영향을 줘야하는데, FLUX는 픽셀이 아니라 token 단위로 처리하기 때문에 공간 제약을 둘 수 없음)
