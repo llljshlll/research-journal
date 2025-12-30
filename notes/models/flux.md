@@ -176,7 +176,7 @@ Q, K에 RoPE 적용 + Attention 계산 => 위치 정보는 attention score 계�
 attention 결과를 다시 텍스트/이미지로 분리  
   
   
-### 2.4 Single Stream Blocks
+### 2.5 Single Stream Blocks
 ![FLUX Architecture global SingleStream](../../docs/assets/models/flux/SingleStream.png)
 ![FLUX Architecture DoubleStream](../../docs/assets/models/flux/FLUX_SingleStreamBlock_architecture.png)
 Double Stream Block에서는 이미지와 텍스트가 별도의 경로를 가졌으나,   
@@ -185,7 +185,7 @@ Single Stream Block에 진입하기 직전 두 시퀀스는 하나로 Concatenat
 이미지 토큰과 텍스트 토큰이 구분 없이 **동일한 가중치(Unified weights**)를 공유하며 어텐션 및 MLP 연산을 수행
 
   
-### loss
+### 2.6 loss
 RF Loss (Rectified Flow Loss), RTP Loss (Regional Text Perceptual Loss) 사용  
 - RF Loss : 중간 상태 latent가 **데이터 쪽으로 가야 할 속도**를 모델이 얼마나 잘 예측하는지의 오차
 - RTP Loss : RF Loss만으로는 텍스트 획, 얇은 문자 구조 같은 디테일들 약해짐 오직 텍스트 영역에만 집중된 시각적 지각 오차를 계산
