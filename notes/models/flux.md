@@ -81,13 +81,13 @@ Output
 
 ```
 
-## 2.1 Text Encoding
+### 2.1 Text Encoding
 
 ![FLUX Architecture Text Encoding](../../docs/assets/models/flux/Text_Encoding.png)
 
 FLUX는 텍스트 조건 처리를 위해 **T5와 CLIP 인코더를 모두 사용**하는 구조 채택.
 
-### Text Encoders
+#### Text Encoders
 - T5 (T5-v1.1-XXL):  
   매우 방대한 파라미터를 가진 텍스트 인코더
   자연어의 복잡한 문맥과 상세한 지시 사항을 깊이 있게 이해하는 데 사용
@@ -96,7 +96,7 @@ FLUX는 텍스트 조건 처리를 위해 **T5와 CLIP 인코더를 모두 사�
   시각 정보와 텍스트 사이의 연관성을 학습한 인코더
   프롬프트의 의미가 이미지와 시각적으로 얼마나 잘 일치하는지를 조절하는 global guide 역할
   
-### Text Encoders
+#### Text Encoders
 - **T5 출력(txt)**  
   시퀀스 형태의 텍스트 토큰으로 유지되며,
   각 Transformer block에서 self-attention과 MLP 연산을 거치면서
@@ -106,7 +106,7 @@ FLUX는 텍스트 조건 처리를 위해 **T5와 CLIP 인코더를 모두 사�
   토큰마다 변하지 않는 **전역(global) conditioning 정보**로 사용됨.
 
 
-## 2.2 Image Encoding
+### 2.2 Image Encoding
 Image → VAE Encoder → Latent Space z 로 변환
 이 과정에서 원본 이미지는 **C × H × W** 형태의 latent feature로 압축  
 
@@ -118,7 +118,7 @@ latent의 각 공간 위치 `(H, W)`에 대응하는 **채널 벡터를 하나�
 예를들어, 512*512 image 이미지를 입력할 경우 VAE 출력이 16*64*64라면,  
 **16차원 채널을 가진 4,096개의 이미지 토큰** 생성.
 
-## 2.3 3D RoPE(3-Dimensional Rotary Positional Embedding)
+### 2.3 3D RoPE(3-Dimensional Rotary Positional Embedding)
 ![FLUX Architecture 3D RoPE](../../docs/assets/models/flux/RoPE.png)
 앞에서 이미지 latent가 토큰 시퀀스로 펼쳐지기 때문에  
 각 토큰이 원래 이미지에서의 위치 정보를 잃어버릴 위험이 있음  
@@ -131,7 +131,7 @@ text idx, noise img idx, reference img idx가 3차원으로 concat된 형태로 
 => EmbedND에서 각 오프셋에 대해 회전행렬 생성( 추후 RoPE attention에 사용)
 
 
-## 2.4 Double Stream Blocks
+### 2.4 Double Stream Blocks
 ![FLUX Architecture global DoubleStream](../../docs/assets/models/flux/DoubleStream.png)
 ![FLUX Architecture DoubleStream](../../docs/assets/models/flux/FLUX_DobloeStreamBlock_architecture.png)
 이미지 토큰과 텍스트 토큰에 대해 각각 별도의 가중치(Separate weights)**를 할당하여 병렬로 처리하는 구조
@@ -142,7 +142,7 @@ Visual Stream: VAE를 통해 인코딩된 이미지의 잠재 토큰(Latent toke
 3. 다시 분리: 어텐션 연산이 끝나면 정보가 교류된 토큰들을 다시 각자의 스트림(가중치)으로 돌려보내 다음 처리를 이어갑니다
 
 
-### Modulation
+#### Modulation
 ![FLUX Architecture DoubleStream modulation](../../docs/assets/models/flux/modulation.png)
 ![FLUX Architecture modulation](../../docs/assets/models/flux/FLUX_Modulation_architecture.png)
 **vec (Vector Conditioning)**  
@@ -166,7 +166,7 @@ Double Stream Blocks가 **이미지와 텍스트에 서로 다른 Weights**를 �
 
 
 
-### RoPE Attention
+#### RoPE Attention
 ![FLUX Architecture RoPE](../../docs/assets/models/flux/RoPE.png)
 DoubleStream으로 이미지 토큰 시퀀스와 텍스트 토큰 시퀀스가 별도로 흐르지만, 그래도 서로의 영향을 주기 위해 attention 계산을 합쳐서 함. attention 계산 후 다시 분리
 
@@ -178,13 +178,13 @@ Q, K에 RoPE 적용 + Attention 계산 => 위치 정보는 attention score 계�
 attention 결과를 다시 텍스트/이미지로 분리
 
 
-## 2.4 Single Stream Blocks
+### 2.4 Single Stream Blocks
 ![FLUX Architecture global SingleStream](../../docs/assets/models/flux/SingleStream.png)
 ![FLUX Architecture DoubleStream](../../docs/assets/models/flux/FLUX_SingleStreamBlock_architecture.png)
 Double Stream Block에서는 이미지와 텍스트가 별도의 경로를 가졌으나,   
 Single Stream Block에 진입하기 직전 두 시퀀스는 하나로 Concatenate
 
-이미지 토큰과 텍스트 토큰이 구분 없이 **동일한 가중치(Unified weights)**를 공유하며 어텐션 및 MLP 연산을 수행
+이미지 토큰과 텍스트 토큰이 구분 없이 **동일한 가중치(Unified weights**)를 공유하며 어텐션 및 MLP 연산을 수행
 
 
 
@@ -200,6 +200,20 @@ P.E도 RoPE Attention을 이용해서 들어가기 때문에, 블록마다 서�
 
 
 +FLUX.1 기반 모델들은 120억 개, 더 강력해진 FLUX.2 모델들은 240억 개의 파라미터
+
+
+## 3. FlowEdit
+FlowEdit : FLUX.1과 같은 Rectified Flow모델을 활용하여 실제 이미지를 편집하는 새로운 방식
+
+- 기존 방식 (FLUX.1 Fill 등)
+    - 일반적으로 이미지를 편집할 때 이미지를 노이즈로 변환(Inversion)한 뒤 다시 복원하며 편집하는 과정
+    - 생성 모델이기 때문에 처음부터 그림을 그리는 데 최적화
+- FlowEdit
+    - 이미지를 노이즈로 바꿨다가 다시 돌아오는 복잡한 경로 대신, 원본 이미지 분포에서 목표 이미지 분포로 직접 연결되는 최단 경로(ODE)를 설계, 노이즈 공간을 거치지 않기 때문에 원본의 구조를 훨씬 더 정밀하게 보존할 수 있음
+    - 원본 이미지의 구조적 특징은 유지하면서 텍스트 프롬프트에 명시된 부분만 정확하게 바꾸는 능력"**이 탁월
+
+
+
 
 
 
