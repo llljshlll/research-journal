@@ -60,10 +60,7 @@ FLUX = **Transformer Diffusion** Based Multimodal Generative AI
 ```
 Input
 ├── Text Prompt: T5 및 CLIP을 통해 처리
-├── Image: diffusion timestep t에서의 latent (x_t), optionally initialized from a reference image
-└── Other Modalities:
-    ├── Structural Guidance: Canny edge, Depth map (Flux.1 Tools) 
-    └── Text-Specific Priors: Glyph map, Position mask (FLUX-Text 변형 모델)
+└── Image: diffusion timestep t에서의 latent (x_t), optionally initialized from a reference image
 
 Process
 ├── Text Encoding → T5 Text Encoder 및 CLIP
