@@ -95,93 +95,112 @@ FLUX는 텍스트 조건 처리를 위해 **T5와 CLIP 인코더를 모두 사�
 - **T5 출력(txt)**  
   시퀀스 형태의 텍스트 토큰으로 유지되며,
   각 Transformer block에서 self-attention과 MLP 연산을 거치면서
-  이미지 토큰과의 상호작용에 따라 **점진적으로 갱신됨**.
+  이미지 토큰과의 상호작용에 따라 **점진적으로 업데이트됨**.  
+  **토큰 수 최대 512개, 4096채널**
 - **CLIP 출력(y)**  
   timestep 및 guidance 정보와 함께 결합되어,
-  토큰마다 변하지 않는 **전역(global) conditioning 정보**로 사용됨.
+  토큰마다 변하지 않는 **global conditioning 정보**로 사용됨.
 
 
 ### 2.2 Image Encoding
-Image → VAE Encoder → Latent Space z 로 변환
+Image → VAE Encoder → Latent Space 속 z 로 변환  
 이 과정에서 원본 이미지는 **C × H × W** 형태의 latent feature로 압축  
-
+  
 Transformer 기반 아키텍처는 2D feature map이 아닌 **1D 시퀀스 입력**을 요구하므로,  
 latent의 각 공간 위치 `(H, W)`에 대응하는 **채널 벡터를 하나의 토큰으로 처리**  
-
-즉, H×W 개의 좌표에 있는 벡터들을 일렬로 Flattening해서 하나의 긴 시퀀스로 만들어서 처리함  
-
+  
+즉, H×W 개의 좌표에 있는 벡터들을 일렬로 Flatten해서 하나의 긴 시퀀스로 만들어서 처리함  
+  
 예를들어, 512*512 image 이미지를 입력할 경우 VAE 출력이 16*64*64라면,  
-**16차원 채널을 가진 4,096개의 이미지 토큰** 생성.
+**16차원 채널을 가진 4,096개의 이미지 토큰** 생성.  
 
+> 텍스트와 이미지 모두 linear layer 거쳐서 각각 (512, 3072), (4096, 3072)로 변환 후 추후 처리됨  
+  
 ### 2.3 3D RoPE(3-Dimensional Rotary Positional Embedding)
 ![FLUX Architecture 3D RoPE](../../docs/assets/models/flux/RoPE.png)
 앞에서 이미지 latent가 토큰 시퀀스로 펼쳐지기 때문에  
-각 토큰이 원래 이미지에서의 위치 정보를 잃어버릴 위험이 있음  
-따라서 이를 방지하기 위해 3D RoPE 사용
+각 토큰이 원래 이미지에서의 위치 정보를 잃어버릴 위험이 있음   
+따라서 이를 방지하기 위해 3D RoPE 사용  
 
-각 토큰의 원래 feature map에서의 **공간 좌표 (H, W**)와 토큰이 속한 이미지 그룹을 구분하기 위한 인덱스(t)를 인덱싱하여 주입
-즉, 시공간 좌표((t,H,W))를 트랜스포머 연산에 사용할 수 있는 PE(Positional Embedding) 형태로 변환
-
-text idx, noise img idx, reference img idx가 3차원으로 concat된 형태로 EmbedND에 들어감
-=> EmbedND에서 각 오프셋에 대해 회전행렬 생성( 추후 RoPE attention에 사용)
-
+각 토큰의 원래 feature map에서의 **공간 좌표 (H, W**)와 토큰이 속한 이미지 그룹을 구분하기 위한 인덱스(t)를 인덱싱하여 주입  
+즉, 시공간 좌표((t,H,W))를 트랜스포머 연산에 사용할 수 있는 PE(Positional Embedding) 형태로 변환  
+  
+text idx, noise img idx, reference img idx가 3차원으로 concat된 형태로 EmbedND에 들어감  
+=> EmbedND에서 각 오프셋에 대해 회전행렬 생성( 추후 RoPE attention에 사용)  
+  
 
 ### 2.4 Double Stream Blocks
 ![FLUX Architecture global DoubleStream](../../docs/assets/models/flux/DoubleStream.png)
 ![FLUX Architecture DoubleStream](../../docs/assets/models/flux/FLUX_DobloeStreamBlock_architecture.png)
-이미지 토큰과 텍스트 토큰에 대해 각각 별도의 가중치(Separate weights)**를 할당하여 병렬로 처리하는 구조
-Text Stream : 텍스트 인코더(T5, CLIP 등)를 통해 들어온 언어적 의미 정보를 처리
-Visual Stream: VAE를 통해 인코딩된 이미지의 잠재 토큰(Latent tokens)들을 처리
-1. 시퀀스 연결(Concatenation): 별도로 흐르던 이미지 토큰 시퀀스와 텍스트 토큰 시퀀스를 하나로 합칩니다.
-2. 통합 어텐션 수행: 합쳐진 전체 시퀀스 위에서 어텐션 연산을 수행하여, 이미지 토큰이 텍스트의 맥락을 읽고 텍스트 토큰이 이미지의 구조를 파악하게 합니다.
-3. 다시 분리: 어텐션 연산이 끝나면 정보가 교류된 토큰들을 다시 각자의 스트림(가중치)으로 돌려보내 다음 처리를 이어갑니다
-
-
+이미지 토큰과 텍스트 토큰에 대해 각각 별도의 가중치(Separate weights)**를 할당하여 병렬로 처리하는 구조  
+Text Stream : 텍스트 인코더(T5, CLIP 등)를 통해 들어온 언어적 의미 정보를 처리  
+Visual Stream: VAE를 통해 인코딩된 이미지의 잠재 토큰(Latent tokens)들을 처리  
+1. 시퀀스 연결(Concatenation): 별도로 흐르던 이미지 토큰 시퀀스와 텍스트 토큰 시퀀스를 하나로 합침 
+2. 통합 어텐션 수행: 합쳐진 전체 시퀀스 위에서 어텐션 연산을 수행하여, 이미지 토큰이 텍스트의 맥락을 읽고 텍스트 토큰이 이미지의 구조를 파악하게 함
+3. 다시 분리: 어텐션 연산이 끝나면 정보가 교류된 토큰들을 다시 각자의 스트림(가중치)으로 돌려보내 다음 처리를 이어감
+  
+  
 #### Modulation
 ![FLUX Architecture DoubleStream modulation](../../docs/assets/models/flux/modulation.png)
 ![FLUX Architecture modulation](../../docs/assets/models/flux/FLUX_Modulation_architecture.png)
 **vec (Vector Conditioning)**  
-Diffusion timestep embedding과 텍스트의 전역적 의미 정보를 결합한 conditioning 벡터.
-  
-  
+Diffusion timestep embedding과 텍스트의 전역적 의미 정보를 결합한 conditioning 벡터.  
+    
+   
 vec는 블록 내부의 Linear layer와 SiLU 활성화를 거쳐  
 해당 블록에서 사용할 변조 파라미터 (α, β, γ)를 생성함.  
-이 파라미터들은 이미지(img) 스트림과 텍스트(txt) 스트림에 각각 적용됨.
-
+이 파라미터들은 이미지(img) 스트림과 텍스트(txt) 스트림에 각각 적용됨.  
+  
 - Shift (β): 정규화된 데이터에 Bias 를 더해 특징의 기준점을 이동시킴
 - Scale (γ): 정규화된 feature에 스케일을 곱해 특정 특징의 강도를 증폭 또는 감쇠하며 시각적 요소를 강조
-- Gate (α): Attention이나 MLP 연산의 결과물이 Residual Connection을 통해 원래 데이터와 합쳐지기 직전에 적용. 해당 층에서 계산된 정보가 최종 출력에 얼마나 기여할지를 결정하는 역할, 모델의 학습 안정성을 높이고 조건부 생성을 정교하게 제어
+- Gate (α): Attention이나 MLP 연산의 결과물이 Residual Connection을 통해 원래 데이터와 합쳐지기 직전에 적용. 해당 층에서 계산된 정보가 최종 출력에 얼마나 기여할지를 결정하는 역할, 모델의 학습 안정성을 높이고 조건부 생성을 정교하게 제어  
+  
+트랜스포머 기반의 DiT 블록은 크게 두 부분으로 구성되며, 각 부분 직전에 Modulation이 적용되기 때문에 1과 2로 구분됨 
+- 1 (Pre-Attention): Attention 연산 이전에 적용되어, 이미지 및 텍스트 토큰의 특징을 조건에 맞게 정렬.  
+- 2 (Pre-MLP): Attention 이후 MLP 이전에 적용되어, 융합된 정보를 토큰 단위에서 정밀하게 조정.  
 
-트랜스포머 기반의 DiT 블록은 크게 두 부분으로 구성되며, 각 부분 직전에 Modulation이 적용되기 때문에 1과 2로 구분됨
-- 1 (Pre-Attention): Attention 연산 이전에 적용되어, 이미지 및 텍스트 토큰의 특징을 조건에 맞게 정렬.
-- 2 (Pre-MLP): Attention 이후 MLP 이전에 적용되어, 융합된 정보를 토큰 단위에서 정밀하게 조정.
-
-이미지(img)와 텍스트(txt) 스트림이 분리되어 Modulation이 적용되는 이유는,  
-Double Stream Blocks가 **이미지와 텍스트에 서로 다른 Weights**를 사용하는 구조이기 때문.
-
-
+이미지(img)와 텍스트(txt) 스트림이 분리되어 Modulation이 적용되는 이유는,    
+Double Stream Blocks가 **이미지와 텍스트에 서로 다른 Weights**를 사용하는 구조이기 때문.  
+  
+  
 
 #### RoPE Attention
 ![FLUX Architecture RoPE](../../docs/assets/models/flux/RoPE.png)
-DoubleStream으로 이미지 토큰 시퀀스와 텍스트 토큰 시퀀스가 별도로 흐르지만, 그래도 서로의 영향을 주기 위해 attention 계산을 합쳐서 함. attention 계산 후 다시 분리
-
-Positional Encoding을 사용하여 포지션도 적용함
-
-텍스트/이미지 스트림에서 각각 Q,K,V 만들기
-Q,K,V를 시퀀스 차원으로 concat
-Q, K에 RoPE 적용 + Attention 계산 => 위치 정보는 attention score 계산에만 영향
-attention 결과를 다시 텍스트/이미지로 분리
-
-
+DoubleStream으로 이미지 토큰 시퀀스와 텍스트 토큰 시퀀스가 별도로 흐르지만, 그래도 서로의 영향을 주기 위해  attention 계산을 합쳐서 함. attention 계산 후 다시 분리  
+  
+Positional Encoding을 사용하여 포지션도 적용함  
+  
+텍스트/이미지 스트림에서 각각 Q,K,V 만들기  
+Q,K,V를 시퀀스 차원으로 concat  
+Q, K에 RoPE 적용 + Attention 계산 => 위치 정보는 attention score 계산에만 영향  
+attention 결과를 다시 텍스트/이미지로 분리  
+  
+  
 ### 2.4 Single Stream Blocks
 ![FLUX Architecture global SingleStream](../../docs/assets/models/flux/SingleStream.png)
 ![FLUX Architecture DoubleStream](../../docs/assets/models/flux/FLUX_SingleStreamBlock_architecture.png)
 Double Stream Block에서는 이미지와 텍스트가 별도의 경로를 가졌으나,   
-Single Stream Block에 진입하기 직전 두 시퀀스는 하나로 Concatenate
-
+Single Stream Block에 진입하기 직전 두 시퀀스는 하나로 Concatenate  
+  
 이미지 토큰과 텍스트 토큰이 구분 없이 **동일한 가중치(Unified weights**)를 공유하며 어텐션 및 MLP 연산을 수행
 
+  
+### loss
+RF Loss (Rectified Flow Loss), RTP Loss (Regional Text Perceptual Loss) 사용  
+- RF Loss : 중간 상태 latent가 **데이터 쪽으로 가야 할 속도**를 모델이 얼마나 잘 예측하는지의 오차
+- RTP Loss : RF Loss만으로는 텍스트 획, 얇은 문자 구조 같은 디테일들 약해짐 오직 텍스트 영역에만 집중된 시각적 지각 오차를 계산
+- λ : 전역 구조(RF) vs 텍스트 디테일(RTP) 균형 조절
 
+```
+RF Loss:
+L_RF = E[ || vθ(z_t, t) − (ε − x) ||² ]
+
+RTP Loss:
+L_RTP = Σ_k || M_p ⊙ ( T^k(x_pred) − T^k(x_gt) ) ||²
+
+Final:
+L = L_RF + λ · L_RTP
+```
 
 > 한 스텝에서 DoubleStream Block과 SingleStream Block에 각각 들어오는 P.E, vec값은 같지만, 
 vec는 각 층의 Modulation유닛의 Linear층이 각 블록마다 다르게 학습된 가중치 가지고 있어서 동일한 vec들어오더라도 서로 다른 α,β,γ 파라미터 생성해냄
