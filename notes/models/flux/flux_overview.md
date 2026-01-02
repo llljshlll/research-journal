@@ -2,14 +2,14 @@
 
 ## 1. Overview
 FLUX = **Transformer Diffusion** Based Multimodal Generative AI
-![Compare Unet to DiT](../../docs/assets/models/flux/UNet_DiT.png)
+![Compare Unet to DiT](../../../docs/assets/models/flux/UNet_DiT.png)
 기존의 UNet architecture는 convolution 연산의 특성상 local context를 모델링하는데 강점이 있지만, global context를 이해하는데 한계가 있음  
 => 이에 따라 FLUX는 UNet 대신 Diffusion Transformer(DiT) 계열 아키텍처를 채택하여
 복잡한 global 컨텍스트를 보다 효과적으로 모델링함  
   
 
 ## 2. Architecture
-![FLUX Architecture](../../docs/assets/models/flux/FLUX_architecture.png)
+![FLUX Architecture](../../../docs/assets/models/flux/FLUX_architecture.png)
 1. Input Section
 
 | Symbol | Description |  
@@ -54,7 +54,7 @@ FLUX = **Transformer Diffusion** Based Multimodal Generative AI
 | **md** | modulation이 적용되는 feature dimension 크기 |
 | **d tensors** | chunk 연산을 통해 생성된 개별 modulation 파라미터 텐서 |
 
-![FLUX Architecture](../../docs/assets/models/flux/FLUX_global_architecture.png)
+![FLUX Architecture](../../../docs/assets/models/flux/FLUX_global_architecture.png)
 
 
 ```
@@ -78,7 +78,7 @@ Output
 
 ### 2.1 Text Encoding
 
-![FLUX Architecture Text Encoding](../../docs/assets/models/flux/Text_Encoding.png)
+![FLUX Architecture Text Encoding](../../../docs/assets/models/flux/Text_Encoding.png)
 
 FLUX는 텍스트 조건 처리를 위해 **T5와 CLIP 인코더를 모두 사용**하는 구조 채택.
 
@@ -117,7 +117,7 @@ latent의 각 공간 위치 `(H, W)`에 대응하는 **채널 벡터를 하나�
 > 텍스트와 이미지 모두 linear layer 거쳐서 각각 (512, 3072), (4096, 3072)로 변환 후 추후 처리됨  
   
 ### 2.3 3D RoPE(3-Dimensional Rotary Positional Embedding)
-![FLUX Architecture 3D RoPE](../../docs/assets/models/flux/RoPE.png)
+![FLUX Architecture 3D RoPE](../../../docs/assets/models/flux/RoPE.png)
 앞에서 이미지 latent가 토큰 시퀀스로 펼쳐지기 때문에  
 각 토큰이 원래 이미지에서의 위치 정보를 잃어버릴 위험이 있음   
 따라서 이를 방지하기 위해 3D RoPE 사용  
@@ -130,8 +130,8 @@ text idx, noise img idx, reference img idx가 3차원으로 concat된 형태로 
   
 
 ### 2.4 Double Stream Blocks
-![FLUX Architecture global DoubleStream](../../docs/assets/models/flux/DoubleStream.png)
-![FLUX Architecture DoubleStream](../../docs/assets/models/flux/FLUX_DobloeStreamBlock_architecture.png)
+![FLUX Architecture global DoubleStream](../../../docs/assets/models/flux/DoubleStream.png)
+![FLUX Architecture DoubleStream](../../../docs/assets/models/flux/FLUX_DobloeStreamBlock_architecture.png)
 이미지 토큰과 텍스트 토큰에 대해 각각 별도의 가중치(Separate weights)**를 할당하여 병렬로 처리하는 구조  
 Text Stream : 텍스트 인코더(T5, CLIP 등)를 통해 들어온 언어적 의미 정보를 처리  
 Visual Stream: VAE를 통해 인코딩된 이미지의 잠재 토큰(Latent tokens)들을 처리  
@@ -141,8 +141,8 @@ Visual Stream: VAE를 통해 인코딩된 이미지의 잠재 토큰(Latent toke
   
   
 #### Modulation
-![FLUX Architecture DoubleStream modulation](../../docs/assets/models/flux/modulation.png)
-![FLUX Architecture modulation](../../docs/assets/models/flux/FLUX_Modulation_architecture.png)
+![FLUX Architecture DoubleStream modulation](../../../docs/assets/models/flux/modulation.png)
+![FLUX Architecture modulation](../../../docs/assets/models/flux/FLUX_Modulation_architecture.png)
 **vec (Vector Conditioning)**  
 Diffusion timestep embedding과 텍스트의 전역적 의미 정보를 결합한 conditioning 벡터.  
     
@@ -165,7 +165,7 @@ Double Stream Blocks가 **이미지와 텍스트에 서로 다른 Weights**를 �
   
 
 #### RoPE Attention
-![FLUX Architecture RoPE](../../docs/assets/models/flux/RoPE.png)
+![FLUX Architecture RoPE](../../../docs/assets/models/flux/RoPE.png)
 DoubleStream으로 이미지 토큰 시퀀스와 텍스트 토큰 시퀀스가 별도로 흐르지만, 그래도 서로의 영향을 주기 위해  attention 계산을 합쳐서 함. attention 계산 후 다시 분리  
   
 Positional Encoding을 사용하여 포지션도 적용함  
@@ -177,8 +177,8 @@ attention 결과를 다시 텍스트/이미지로 분리
   
   
 ### 2.5 Single Stream Blocks
-![FLUX Architecture global SingleStream](../../docs/assets/models/flux/SingleStream.png)
-![FLUX Architecture DoubleStream](../../docs/assets/models/flux/FLUX_SingleStreamBlock_architecture.png)
+![FLUX Architecture global SingleStream](../../../docs/assets/models/flux/SingleStream.png)
+![FLUX Architecture DoubleStream](../../../docs/assets/models/flux/FLUX_SingleStreamBlock_architecture.png)
 Double Stream Block에서는 이미지와 텍스트가 별도의 경로를 가졌으나,   
 Single Stream Block에 진입하기 직전 두 시퀀스는 하나로 Concatenate  
   
