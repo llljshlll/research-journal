@@ -1,6 +1,6 @@
 # FLUX ARCHITECTURE ANALYSIS
 
-<img src="../../../docs/assets/models/flux/FLUX_architecture_shape.png" width="1500">
+<img src="../../../docs/assets/models/flux/FLUX_architecture_shape.png">
 
 ## 목차
 1. [Global Architecture](#1-global-architecture)
@@ -11,7 +11,7 @@
 6. [LastLayer](#6-lastlayer)
 
 ## 1. Global Architecture
-<img src="../../../docs/assets/models/flux/FLUX_global_architecture_shape.png" width="1000">
+<img src="../../../docs/assets/models/flux/FLUX_global_architecture_shape.png">
 - hidden_dim = 3072
 - num_heads = 24
 - head_dim = 128  (3072 = 24 × 128)
@@ -22,7 +22,7 @@
 ## 2. Input
 
 ### 2.1 Text Encoders
-<img src="../../../docs/assets/models/flux/text_encoder.png" width="400">
+<img src="../../../docs/assets/models/flux/text_encoder.png" width="600">
   
 - **T5 (T5-v1.1-XXL)**
   - 시퀀스 형태의 텍스트 토큰을 생성
@@ -51,7 +51,7 @@ Linear projection을 통해 hidden_dim 공간으로 변환
 
 
 ### 2.3 EmbedND
-<img src="../../../docs/assets/models/flux/text_encoder.png" width="400">
+<img src="../../../docs/assets/models/flux/text_encoder.png" width="600">
 Transformer model을 사용하면, 이미지 latent가 1D 시퀀스로 펼쳐지면서, 각 토큰의 원래 공간 위치 정보가 사라진다.  
 이를 보완하기 위해 FLUX는 3D RoPE를 사용한다.  
   
@@ -65,7 +65,7 @@ Transformer model을 사용하면, 이미지 latent가 1D 시퀀스로 펼쳐지
 - 학습가능한 파라미터가 없음
 
 ### 2.4 MLP Embedding
-<img src="../../../docs/assets/models/flux/mlp.png" width="400">
+<img src="../../../docs/assets/models/flux/mlp.png" width="600">
 Timestep embedding, text pooled embedding은
 MLP를 통해 hidden_dim(3072)으로 projection됨.  
   
@@ -75,7 +75,7 @@ MLP를 통해 hidden_dim(3072)으로 projection됨.
 ## 3. Core Mechanisms (RoPE, Modulation)
 
 ### 3.1 RoPE Attention
-<img src="../../../docs/assets/models/flux/RoPE_attention.png" width="1000">
+<img src="../../../docs/assets/models/flux/RoPE_attention.png">
 RoPE(Rotary Positional Encoding)는 attention에서 위치 정보를 주입하기 위한 방식.
 토큰 feature에 위치 벡터를 더하지 않고, Query(Q)와 Key(K)를 회전시키는 방식으로 위치 정보 반영.
 ```
