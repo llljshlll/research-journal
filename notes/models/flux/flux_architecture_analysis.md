@@ -181,7 +181,7 @@ Attention 또는 MLP 연산 결과가 residual connection으로 합쳐지기 직
 해당 층에서 계산된 정보가 최종 출력에 기여하는 비율을 조절하며, 모델의 학습 안정성과 조건부 제어 정밀도 향상에 기여   
 
 ### 3.3 QKNorm
-<img src="../../../docs/assets/models/flux/QKNorm.png" width="300">
+<img src="../../../docs/assets/models/flux/QKNorm.png" width="200">
 Query와 Key에 RMSNorm을 적용하는 정규화 기법
 
 - Attention score의 scale 폭주 방지
@@ -194,11 +194,11 @@ Q와 K에만 적용되며, Value에는 적용되지 않음.
 
 
 ## 4. Double Stream Block
-<img src="../../../docs/assets/models/flux/Double_Shape.png" width="1000">
+<img src="../../../docs/assets/models/flux/Double_Shape.png">
 이미지 토큰(img)과 텍스트 토큰(txt)을 서로 분리된 스트림으로 유지한 채 처리하면서, attention 단계에서만 두 스트림 간의 정보 교환을 수행하는 블록  
 
 ### Modulation  
-<img src="../../../docs/assets/models/flux/double_modulation.png" width="1000">
+<img src="../../../docs/assets/models/flux/double_modulation.png">
 Double Stream Block은 두 개의 주요 연산 단계로 구성되며, 각 단계 직전에 Modulation이 적용됨  
 
 1. **Pre-Attention**  
@@ -249,7 +249,7 @@ x = x + gate * MLP(x)
 
 
 ## 5. Single Stream Block
-<img src="../../../docs/assets/models/flux/single_shape.png" width="1000">
+<img src="../../../docs/assets/models/flux/single_shape.png">
 Double Stream Block 이후, 이미지 토큰과 텍스트 토큰을 하나의 시퀀스로 결합하여 완전히 통합된 표현 공간에서 처리하는 블록
 두 토큰을 concat하여 동일한 attention과 MLP 연산을 공유하며 융합 수행
 
