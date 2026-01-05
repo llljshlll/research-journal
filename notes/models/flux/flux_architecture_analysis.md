@@ -1,15 +1,17 @@
 # FLUX ARCHITECTURE ANALYSIS
 
-목차
-1. Global Architecture
-2. Input
-3. Core Mechanisms (RoPE, Modulation)
-4. Double Stream Block
-5. Single Stream Block
+<img src="../../../docs/assets/papers/flux/FLUX_architecture_shape.png" width="1000">
 
+## 목차
+1. [Global Architecture](#1-global-architecture)
+2. [Input](#2-input)
+3. [Core Mechanisms (RoPE, Modulation)](#3-core-mechanisms-rope-modulation)
+4. [Double Stream Block](#4-double-stream-block)
+5. [Single Stream Block](#5-single-stream-block)
+6. [LastLayer](#6-lastlayer)
 
 ## 1. Global Architecture
-ex) ![Overall pipeline of Skyfall-GS](../../../docs/assets/papers/flux/FLUX_global_architecture_shape.png)
+<img src="../../../docs/assets/papers/flux/FLUX_global_architecture_shape.png" width="800">
 - hidden_dim = 3072
 - num_heads = 24
 - head_dim = 128  (3072 = 24 × 128)
@@ -20,8 +22,7 @@ ex) ![Overall pipeline of Skyfall-GS](../../../docs/assets/papers/flux/FLUX_glob
 ## 2. Input
 
 ### 2.1 Text Encoders
-
-FLUX uses two text encoders with different roles.
+<img src="../../../docs/assets/papers/flux/text_encoder.png" width="400">
   
 - **T5 (T5-v1.1-XXL)**
   - 시퀀스 형태의 텍스트 토큰을 생성
@@ -49,8 +50,8 @@ Transformer 입력을 위해, latent feature map은 2×2 spatial packing을 거�
 Linear projection을 통해 hidden_dim 공간으로 변환  
 
 
-### 2.3 Positional Indices for RoPE (EmbedND)
-
+### 2.3 EmbedND
+<img src="../../../docs/assets/papers/flux/text_encoder.png" width="400">
 Transformer model을 사용하면, 이미지 latent가 1D 시퀀스로 펼쳐지면서, 각 토큰의 원래 공간 위치 정보가 사라진다.  
 이를 보완하기 위해 FLUX는 3D RoPE를 사용한다.  
   
@@ -63,11 +64,18 @@ Transformer model을 사용하면, 이미지 latent가 1D 시퀀스로 펼쳐지
 - attention 단계에서 Q와 K를 회전시키기 위한 위치 기반 회전 계수(cos/sin)를 생성하는 역할
 - 학습가능한 파라미터가 없음
 
+### 2.4 MLP Embedding
+<img src="../../../docs/assets/papers/flux/mlp.png" width="400">
+Timestep embedding, text pooled embedding은
+MLP를 통해 hidden_dim(3072)으로 projection됨.  
+  
+이 embedding은 이후 Modulation의 입력 vec로 사용됨.
+
 
 ## 3. Core Mechanisms (RoPE, Modulation)
 
 ### 3.1 RoPE Attention
-
+<img src="../../../docs/assets/papers/flux/RoPE_attention.png" width="800">
 RoPE(Rotary Positional Encoding)는 attention에서 위치 정보를 주입하기 위한 방식.
 토큰 feature에 위치 벡터를 더하지 않고, Query(Q)와 Key(K)를 회전시키는 방식으로 위치 정보 반영.
 ```
@@ -141,6 +149,7 @@ RoPE는 Query(Q)와 Key(K)에만 적용
 
 
 ### 3.2 Modulation
+<img src="../../../docs/assets/papers/flux/Modulation_shape.png" width="500">
 
 Modulation은 diffusion timestep과 텍스트의 전역적 의미 정보를 결합한
 conditioning 벡터 `vec`를 이용해 각 블록의 연산을 조건에 맞게 조절하는 메커니즘.
@@ -171,7 +180,26 @@ Diffusion timestep embedding과 텍스트의 전역적 의미 정보를 결합�
 Attention 또는 MLP 연산 결과가 residual connection으로 합쳐지기 직전에 적용되는 가중치  
 해당 층에서 계산된 정보가 최종 출력에 기여하는 비율을 조절하며, 모델의 학습 안정성과 조건부 제어 정밀도 향상에 기여   
 
-트랜스포머 기반 DiT 블록은 두 개의 주요 연산 단계로 구성되며, 각 단계 직전에 Modulation이 적용됨  
+### 3.3 QKNorm
+<img src="../../../docs/assets/papers/flux/QKNorm.png" width="300">
+Query와 Key에 RMSNorm을 적용하는 정규화 기법
+
+- Attention score의 scale 폭주 방지
+- RoPE 적용 이후 분산 증가 문제 완화
+- head 간 attention 분포 안정화
+
+Q와 K에만 적용되며, Value에는 적용되지 않음.
+
+
+
+
+## 4. Double Stream Block
+<img src="../../../docs/assets/papers/flux/Double_Shape.png" width="800">
+이미지 토큰(img)과 텍스트 토큰(txt)을 서로 분리된 스트림으로 유지한 채 처리하면서, attention 단계에서만 두 스트림 간의 정보 교환을 수행하는 블록  
+
+### Modulation  
+<img src="../../../docs/assets/papers/flux/double_modulation.png" width="800">
+Double Stream Block은 두 개의 주요 연산 단계로 구성되며, 각 단계 직전에 Modulation이 적용됨  
 
 1. **Pre-Attention**  
    Attention 연산 이전에 적용되어 이미지 및 텍스트 토큰의 특징을 조건에 맞게 정렬  
@@ -181,6 +209,67 @@ Attention 또는 MLP 연산 결과가 residual connection으로 합쳐지기 직
 
 이미지(img)와 텍스트(txt) 스트림이 분리되어 Modulation이 적용되는 이유는  
 Double Stream Block이 이미지와 텍스트에 서로 다른 weight를 사용하는 구조이기 때문  
+
+---
+
+### Pre-Attention Modulation
+vec로부터 shift / scale / gate 생성 후 img, txt 스트림에 각각 scale, shift적용
+LayerNorm 이후 feature 분포 조정
+```
+x_mod = (1 + scale) * LN(x) + shift
+```
+
+### QKV Projection 및 Head 분리
+Linear layer를 통해 Q, K, V 생성
+hidden_dim = 3072 → num_heads × head_dim = 24 × 128
+```
+Q, K, V : (B, 24, L, 128)
+```
+
+### Cross-Attention + RoPE
+img와 txt에서 생성된 Q, K, V를 token 차원에서 concat
+Q, K에 RoPE positional encoding 적용
+scaled dot-product attention 수행
+이 단계에서만 이미지와 텍스트 간 정보 교환 발생.
+
+### Attention Output 분리 및 Residual 적용
+attention 결과를 다시 img / txt로 분리
+projection 후 gate를 곱해 residual connection으로 반영
+```
+x = x + gate * Attn(x)
+```
+
+### Pre-MLP Modulation + Feed Forward
+두 번째 Modulation 적용
+MLP(확장 비율 4×) 수행
+gate를 통해 residual 반영
+```
+x = x + gate * MLP(x)
+```
+
+
+## 5. Single Stream Block
+<img src="../../../docs/assets/papers/flux/single_shape.png" width="800">
+Double Stream Block 이후, 이미지 토큰과 텍스트 토큰을 하나의 시퀀스로 결합하여 완전히 통합된 표현 공간에서 처리하는 블록
+두 토큰을 concat하여 동일한 attention과 MLP 연산을 공유하며 융합 수행
+
+---
+
+Single Stream Block은 Double Stream Block에서 stream만 한개로 줄어든 흐름을 가진다.
+1. Pre-Attention Modulation
+2. Self-Attention
+3. Pre-MLP Modulation
+4. MLP
+5. Residual Update
+
+
+
+## 6. LastLayer
+<img src="../../../docs/assets/papers/flux/lastLayer.png" width="500">
+Transformer 블록을 모두 통과한 hidden state를 diffusion 모델이 요구하는 **latent noise 예측 공간**으로 변환하는 출력 전용 레이어.
+- Transformer hidden state → noise prediction
+- 조건(timestep, text)에 따라 **출력 강도 직접 제어**
+- residual, attention 없이 **출력 변환에만 집중**
 
 
 
