@@ -6,8 +6,7 @@
 3. Core Mechanisms (RoPE, Modulation)
 4. Double Stream Block
 5. Single Stream Block
-6. RoPE Attention
-7. Modulation
+
 
 ## 1. Global Architecture
 ex) ![Overall pipeline of Skyfall-GS](../../../docs/assets/papers/flux/FLUX_global_architecture_shape.png)
@@ -101,26 +100,35 @@ RoPE에서는 128차원 벡터를 다음과 같이 해석
   
 128차원 = 64개의 2차원 벡터, 각 2차원 백터가 하나의 회전 단위  
 따라서 Q, K는 다음과 같이 분리됨  
+```
 q_even : (B, 24, L, 64)  
-q_odd  : (B, 24, L, 64)  
+q_odd  : (B, 24, L, 64)
+```  
   
 EmbedND에서 생성된 P.E는 내부적으로 다음 형태로 사용  
+```
 cos : (1, L, 64)
 sin : (1, L, 64)
+```  
 
 
 Attention 연산 시에는 broadcast  
+```
 cos, sin → (1, 1, L, 64)
+```  
 즉, 같은 토큰 위치와 같은 feature index에 대해서는 모든 head가 동일한 cos/sin 값을 공유.
 
 
 회전 연산은 각 feature pair에 대해 다음과 같이 적용
-
+```
 x_even_rot = q_even * cos - q_odd * sin
 x_odd_rot  = q_even * sin + q_odd * cos
+```
 
 이후 두 값을 다시 interleave하여 원래 차원으로 복원
+```
 (x0', x1'), (x2', x3'), … → [x0', x1', x2', x3', ..., x127']
+```  
 
 
 최종 결과:
@@ -130,6 +138,50 @@ Q_rot, K_rot : (B, 24, L, 128)
 RoPE는 Query(Q)와 Key(K)에만 적용  
 위치 정보는 토큰 간의 비교(Q·K 내적)에만 필요하며, 실제 내용을 담고 있는 Value에는 적용하지 않음  
 이후 RoPE로 회전된 Q와 K를 사용하여 일반적인 attention을 수행함   
+
+
+### 3.2 Modulation
+
+Modulation은 diffusion timestep과 텍스트의 전역적 의미 정보를 결합한
+conditioning 벡터 `vec`를 이용해 각 블록의 연산을 조건에 맞게 조절하는 메커니즘.
+
+기존 Stable Diffusion의 time embedding은 현재 timestep 정보를 제공하지만,
+해당 step에서 어떤 연산을 얼마나 반영할지는 명시적으로 제어하지 않고 학습에 맡김  
+
+Modulation은
+timestep + 텍스트 + guidance → vec → shift / scale / gate를 생성하여
+연산 입력 자체와 연산 결과의 반영 비율을 직접 조절  
+  
+즉, 같은 attention, 같은 MLP, 같은 가중치를 사용하면서도
+각 step에서 해당 연산을 얼마나 신뢰할지를 구조적으로 제어  
+
+**vec**  
+Diffusion timestep embedding과 텍스트의 전역적 의미 정보를 결합한 conditioning 벡터.
+
+`vec`는 블록 내부의 Linear layer와 SiLU 활성화를 거쳐 해당 블록에서 사용할 변조 파라미터 (α, β, γ)를 생성.  
+이 파라미터들은 img 스트림과 txt 스트림에 각각 적용.  
+
+**Shift (β)**   
+정규화된 데이터에 bias를 더해 특징의 기준점을 이동  
+
+**Scale (γ)**   
+정규화된 feature에 스케일을 곱해 특정 특징의 강도를 증폭 또는 감쇠  
+
+**Gate (α)**  
+Attention 또는 MLP 연산 결과가 residual connection으로 합쳐지기 직전에 적용되는 가중치  
+해당 층에서 계산된 정보가 최종 출력에 기여하는 비율을 조절하며, 모델의 학습 안정성과 조건부 제어 정밀도 향상에 기여   
+
+트랜스포머 기반 DiT 블록은 두 개의 주요 연산 단계로 구성되며, 각 단계 직전에 Modulation이 적용됨  
+
+1. **Pre-Attention**  
+   Attention 연산 이전에 적용되어 이미지 및 텍스트 토큰의 특징을 조건에 맞게 정렬  
+
+2. **Pre-MLP**  
+   Attention 이후 MLP 이전에 적용되어 융합된 정보를 토큰 단위에서 정밀하게 조정  
+
+이미지(img)와 텍스트(txt) 스트림이 분리되어 Modulation이 적용되는 이유는  
+Double Stream Block이 이미지와 텍스트에 서로 다른 weight를 사용하는 구조이기 때문  
+
 
 
 
