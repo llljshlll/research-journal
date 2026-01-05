@@ -11,7 +11,7 @@
 6. [LastLayer](#6-lastlayer)
 
 ## 1. Global Architecture
-<img src="../../../docs/assets/models/flux/FLUX_global_architecture_shape.png" width="800">
+<img src="../../../docs/assets/models/flux/FLUX_global_architecture_shape.png" width="1000">
 - hidden_dim = 3072
 - num_heads = 24
 - head_dim = 128  (3072 = 24 × 128)
@@ -75,7 +75,7 @@ MLP를 통해 hidden_dim(3072)으로 projection됨.
 ## 3. Core Mechanisms (RoPE, Modulation)
 
 ### 3.1 RoPE Attention
-<img src="../../../docs/assets/models/flux/RoPE_attention.png" width="800">
+<img src="../../../docs/assets/models/flux/RoPE_attention.png" width="1000">
 RoPE(Rotary Positional Encoding)는 attention에서 위치 정보를 주입하기 위한 방식.
 토큰 feature에 위치 벡터를 더하지 않고, Query(Q)와 Key(K)를 회전시키는 방식으로 위치 정보 반영.
 ```
@@ -194,11 +194,11 @@ Q와 K에만 적용되며, Value에는 적용되지 않음.
 
 
 ## 4. Double Stream Block
-<img src="../../../docs/assets/models/flux/Double_Shape.png" width="800">
+<img src="../../../docs/assets/models/flux/Double_Shape.png" width="1000">
 이미지 토큰(img)과 텍스트 토큰(txt)을 서로 분리된 스트림으로 유지한 채 처리하면서, attention 단계에서만 두 스트림 간의 정보 교환을 수행하는 블록  
 
 ### Modulation  
-<img src="../../../docs/assets/models/flux/double_modulation.png" width="800">
+<img src="../../../docs/assets/models/flux/double_modulation.png" width="1000">
 Double Stream Block은 두 개의 주요 연산 단계로 구성되며, 각 단계 직전에 Modulation이 적용됨  
 
 1. **Pre-Attention**  
@@ -249,7 +249,7 @@ x = x + gate * MLP(x)
 
 
 ## 5. Single Stream Block
-<img src="../../../docs/assets/models/flux/single_shape.png" width="800">
+<img src="../../../docs/assets/models/flux/single_shape.png" width="1000">
 Double Stream Block 이후, 이미지 토큰과 텍스트 토큰을 하나의 시퀀스로 결합하여 완전히 통합된 표현 공간에서 처리하는 블록
 두 토큰을 concat하여 동일한 attention과 MLP 연산을 공유하며 융합 수행
 
