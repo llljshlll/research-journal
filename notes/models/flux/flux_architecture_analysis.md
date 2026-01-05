@@ -1,6 +1,6 @@
 # FLUX ARCHITECTURE ANALYSIS
 
-<img src="../../../docs/assets/models/flux/FLUX_architecture_shape.png" width="1000">
+<img src="../../../docs/assets/models/flux/FLUX_architecture_shape.png" width="1500">
 
 ## 목차
 1. [Global Architecture](#1-global-architecture)
