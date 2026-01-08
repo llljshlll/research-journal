@@ -80,6 +80,7 @@
   - TAESD 기반 접근 방식 포기
 
 🔗 TAESD 분석: `notes/models/stable_diffusion/taesd.md`
+
 ---
 
 #### 3.4 Stream Diffusion + ctrLoRA 직접 병합
