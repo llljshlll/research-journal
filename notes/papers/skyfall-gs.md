@@ -253,6 +253,19 @@ Diffusion model의 역할 정리:
 - **3DGS가 학습해야 할 target image distribution을 점진적으로 개선**하는 역할.
 
 
+#### Why Rectified Flow (RF) Loss fits Diffusion Refinement in Skyfall-GS
+
+**RF 기반 diffusion은 Stage 2의 “structure-preserving refinement” 목적에 적합하다.**
+
+- RF는 현재 latent 상태에서 데이터 분포 방향으로 향하는 velocity field를 직접 예측
+- 저노이즈·저스텝 조건에서 입력 구조로부터의 불필요한 이탈을 최소화
+- geometry에 의해 이미 결정된 전역 구조를 유지한 채 국소적 appearance artifact만 선택적으로 보정
+
+> 결과적으로 FLUX 기반 RF diffusion은 scene generator가 아니라  
+> **3DGS가 따라야 할 target image distribution을 점진적으로 정제하는 정규화 모듈**로 작동
+> Rectified Flow (RF) loss에 대한 자세한 설명은 [`flux_overview.md#7-loss`](../models/flux/flux_architecture_analysis.md#7-loss)를 참고.
+
+
 ### 2.2.2 Multi-sample Diffusion
 
 Diffusion refinement를 단일 샘플로 수행할 경우,

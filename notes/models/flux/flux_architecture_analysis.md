@@ -9,7 +9,7 @@
 4. [Double Stream Block](#4-double-stream-block)
 5. [Single Stream Block](#5-single-stream-block)
 6. [LastLayer](#6-lastlayer)
-7. [Loss](#7-Loss)
+7. [Loss](#7-loss)
 
 ## 1. Global Architecture
 <img src="../../../docs/assets/models/flux/FLUX_global_architecture_shape.png">
@@ -88,12 +88,13 @@ P.E : (1, L, 128, 2, 2)
 각 토큰 위치마다, 각 feature pair에 적용할 회전 행렬을 미리 계산해 둔 값  
 
 ```
-input x : (1, 4068, 3072)
+input x : (1, 4608, 3072)
 ```  
+L = img_seq_len + txt_seq_len = 4096 + 512 = 4608
 
 hidden dimension은 다음과 같이 분해
 ```
-3027 = num_heads * head_dim = 24 * 128
+3072 = num_heads * head_dim = 24 * 128
 ```  
 따라서 Query와 Key의 shape은 다음과 같음.
 ```
@@ -107,7 +108,7 @@ RoPE에서는 128차원 벡터를 다음과 같이 해석
 → (x0, x1), (x2, x3), (x4, x5), ..., (x126, x127)
 ```
   
-128차원 = 64개의 2차원 벡터, 각 2차원 백터가 하나의 회전 단위  
+128차원 = 64개의 2차원 벡터, 각 2차원 벡터가 하나의 회전 단위  
 따라서 Q, K는 다음과 같이 분리됨  
 ```
 q_even : (B, 24, L, 64)  
@@ -213,8 +214,8 @@ Double Stream Block이 이미지와 텍스트에 서로 다른 weight를 사용�
 
 ---
 
-### Pre-Attention Modulation
-vec로부터 shift / scale / gate 생성 후 img, txt 스트림에 각각 scale, shift적용
+### Pre-Attention Modulationㄴ
+vec로부터 shift / scale / gate 생성 후 img, txt 스트림에 각각 scale, shift 적용
 LayerNorm 이후 feature 분포 조정
 ```
 x_mod = (1 + scale) * LN(x) + shift
@@ -304,25 +305,6 @@ L_RF = E[ || v_θ(z_t, t) - (z_1 - x_0) ||^2 ]
 - **모델** : 각 위치에서의 velocity (방향 + 크기)를 예측  
 - **ODE Solver** : 예측된 velocity를 시간 간격 \( \Delta t \) 동안 적분하여 실제 이동량 계산  
   
-모델은 각 위치에서의 local velocity field를 예측하고,  
-ODE solver는 해당 velocity를 시간 간격 Δt 동안 적분하여  
-실제 latent 이동량을 결정  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+> 모델은 각 위치에서의 local velocity field를 예측하고, ODE solver는 해당 velocity를 시간 간격 Δt 동안 적분하여 실제 latent 이동량을 결정  
 
 
