@@ -2,15 +2,9 @@
 
 ## Research History (Overview)
 
-> 학부 연구 기간 동안 수행한 diffusion 기반 그래픽스 연구 흐름을  
-> **문제 정의 → 시도 → 한계 → 방향 전환** 중심으로 정리한 기록
-
 ---
 
 ## Timeline (High-level)
-
-> 세부 실험과 완벽히 1:1로 대응하지 않아도 되는  
-> **연구 흐름 요약용 타임라인**
 
 | Phase | Topic | Key Focus |
 |------|------|-----------|
