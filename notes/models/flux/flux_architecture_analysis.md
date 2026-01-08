@@ -9,6 +9,7 @@
 4. [Double Stream Block](#4-double-stream-block)
 5. [Single Stream Block](#5-single-stream-block)
 6. [LastLayer](#6-lastlayer)
+7. [Loss](#7-Loss)
 
 ## 1. Global Architecture
 <img src="../../../docs/assets/models/flux/FLUX_global_architecture_shape.png">
@@ -270,6 +271,52 @@ Transformer 블록을 모두 통과한 hidden state를 diffusion 모델이 요�
 - Transformer hidden state → noise prediction
 - 조건(timestep, text)에 따라 **출력 강도 직접 제어**
 - residual, attention 없이 **출력 변환에만 집중**
+
+
+## 7. Loss
+FLUX 기반 모델은 **Rectified Flow (RF) Loss**를 기본 학습 목표로 사용  
+  
+**RF Loss** : 모델이 **중간 상태 latent가 데이터 방향으로 이동해야 할 변화율(velocity)** 을 얼마나 정확하게 예측하는지를 측정  
+**velocity** : 단순한 방향이 아니라, **각 위치에서의 변화 방향 + 변화 크기(속도)** 를 모두 포함  
+  
+velocity를 학습한다는 것은 각 latent 상태에서 데이터 쪽으로 이동하기 위한 변화율을 **함수 형태로 학습한다**는 뜻이며,  
+결과 이미지를 직접 맞추는 것이 아니라 latent 공간 상의 **vector field를 학습**하는 방식  
+  
+### 학습에서 사용되는 요소
+1. **현재 상태** (z_t : 데이터와 노이즈 사이의 중간 latent)  
+2. **현재 시간** (t)  
+3. **모델 예측값** (v_θ(z_t, t) : 해당 상태에서의 velocity (방향 + 크기))  
+4. **정답 velocity** (v_{\text{target}} = z_1 - x_0)  
+  
+### 학습 절차 (Flow Matching)
+1. 데이터 latent x_0 샘플  
+2. 노이즈 z_1 샘플  
+3. t ~ Uniform(0, 1)  
+4. z_t = (1 - t) * x_0 + t * z_1  
+5. 정답 velocity: v_target = z_1 - x_0  
+6. 예측: v_θ(z_t, t)  
+7. RF Loss:  
+```
+L_RF = E[ || v_θ(z_t, t) - (z_1 - x_0) ||^2 ]
+```  
+  
+
+- **모델** : 각 위치에서의 velocity (방향 + 크기)를 예측  
+- **ODE Solver** : 예측된 velocity를 시간 간격 \( \Delta t \) 동안 적분하여 실제 이동량 계산  
+  
+모델은 각 위치에서의 local velocity field를 예측하고,  
+ODE solver는 해당 velocity를 시간 간격 Δt 동안 적분하여  
+실제 latent 이동량을 결정  
+
+
+
+
+
+
+
+
+
+
 
 
 
