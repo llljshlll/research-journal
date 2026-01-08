@@ -77,7 +77,7 @@
   - 차원 문제는 해결했으나
   - **TAESD 자체가 치아 원본을 충분히 복원하지 못함**
 - 결론:
-  - TAESD 기반 접근 방식 포기
+  - TAESD 기반 접근 방식 포기  
 
 🔗 TAESD 분석: `notes/models/stable_diffusion/taesd.md`
 
