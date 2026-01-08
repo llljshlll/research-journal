@@ -122,6 +122,7 @@
   - multi-view 일관 이미지를 생성하는 **MV-Adapter** 사용
 
 🔗 MV-Adapter 정리: `notes/papers/mv-adapter.md`
+
 ---
 
 #### 4.2 View 부족 문제
@@ -149,6 +150,7 @@
 
 🔗 Skyfall-GS 정리: `notes/papers/skyfall-GS.md`
 🔗 FLUX 구조 분석: `notes/models/flux.md`
+
 ---
 
 ## Related Notes & Projects
