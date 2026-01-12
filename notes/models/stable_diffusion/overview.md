@@ -328,26 +328,22 @@ Sampler는 **diffusion 과정을 어떻게 시간적으로 적분할지**를 결
 
 Stable Diffusion은 다음 목적을 학습한다.
 
-- 입력: \( z_t, t \)
-- 타겟: 실제로 추가된 noise \( \epsilon \)
-- 출력: UNet의 noise 예측 \( \epsilon_\theta \)
+- 입력: z_t, t
+- 타겟: 실제로 추가된 noise ε
+- 출력: UNet의 noise 예측 ε_theta
 
 즉,
+
 > “현재 latent 상태에서 제거해야 할 noise가 무엇인가”를 학습
 
 ---
 
 ### 4.2 Loss Function
 
-기본 loss는 **Mean Squared Error (MSE)** 이다.
-
-L = E[ || \epsilon - \epsilon_\theta(z_t, t, c) ||^2 ]
-
-yaml
-코드 복사
-
-- \( c \): 텍스트 조건
+기본 loss는 **Mean Squared Error (MSE)** 이다.  
+```
+L = E[ || ε - ε_θ(z_t, t, c) ||^2 ]
+```
+- c: 텍스트 조건
 - 단순하지만 안정적인 학습 가능
-- 대부분의 SD 변형 모델도 동일한 objective 유지
-
----
+- 대부분의 Stable Diffusion 변형 모델에서도 동일한 objective 유지
