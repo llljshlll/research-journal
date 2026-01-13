@@ -69,6 +69,8 @@ explicit한 3D Gaussian set으로 표현**하는 방식 제안.
   view-dependent appearance 표현을 위한  
   **Spherical Harmonics(SH)** 계수
 
+![Gaussian parameterization](../../docs/assets/papers/3d_gaussian_splatting/fig2_gaussian_parameters.png)
+
 > Scene representation = **(μ, Σ, α, SH)** 의 explicit parameter set
 
 ---
@@ -105,6 +107,8 @@ Gaussian covariance를 다음과 같이 재파라미터화:
 ```
 Σ = R(q) · S(s) · S(s)^T · R(q)^T
 ```
+
+![Anisotropic Gaussian representation](../../docs/assets/papers/3d_gaussian_splatting/fig4_anisotropic_gaussian.png)
 
 장점:
 - anisotropic Gaussian 표현 가능
