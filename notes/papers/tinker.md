@@ -58,6 +58,20 @@ TINKER는 **two-component framework**로 구성됨.
 
 *Source: TINKER (Zhao et al., 2025), Fig. 3*
 
+```
+Original 3DGS
+  ↓ render
+Sparse views
+  ↓ (diffusion A)
+Edited sparse views
+  ↓ (diffusion B)
+Dense edited views
+  ↓
+3DGS optimization
+  ↓
+Edited 3DGS  ← 최종 결과
+```
+
 핵심 구성:
 1. **Referring Multi-View Consistent Image Editing**
 2. **Sparse-to-Dense Scene Completion (Depth-guided Video Diffusion)**
