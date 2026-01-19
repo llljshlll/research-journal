@@ -30,14 +30,13 @@
 - Stage1:  
   - satellite images 기반 initial 3DGS 학습  
 - Stage2:  
-  - diffusion으로 novel view 생성  
+  - diffusion으로 stable view 생성  
   - GS parameter refinement  
 
 ### Proposed Pipeline
 
 - Stage1:  
-  - mesh-constrained vanilla 3DGS initialization  
-  - geometry 안정화에 집중  
+  - mesh-constrained vanilla 3DGS initialization   
 - Stage2:  
   - (추후 상세 설계 추가)  
 
