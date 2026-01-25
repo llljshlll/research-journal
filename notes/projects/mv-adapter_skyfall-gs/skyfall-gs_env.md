@@ -62,7 +62,6 @@
 #### 관찰 사항
 - alpha blending을 통해 Gaussian들이 자연스럽게 합성됨
 - 치아 / 잇몸 영역의 appearance가 가장 안정적으로 표현됨
-- 본 실험에서는 해당 결과를 최종 품질 평가 기준으로 사용
 
 
 ---
@@ -93,8 +92,7 @@ fused PLY를 별도로 생성하였습니다.
   - 계산된 색상을 SH DC component (`_features_dc`)에 bake
   - 색상이 포함된 fused PLY 저장
 
-※ 해당 fused PLY는 **시각화 확인용**으로 생성하였으며,  
-   학습이나 최종 결과 정의에는 사용하지 않습니다.
+※ 해당 fused PLY는 **시각화 확인용**으로 생성
 
 ---
 
