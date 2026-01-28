@@ -133,5 +133,4 @@ dental domain에서도 구조적·시각적 multi-view consistency를 효과적�
 
 
 ## Artifacts
-- 설계 정리: [projects/mv-adapter/design.md](./design.md)
 - MV-Adapter 논문 정리: [notes/papers/mv-adapter.md](../../notes/papers/mv-adapter.md)
