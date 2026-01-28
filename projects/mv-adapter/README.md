@@ -28,7 +28,7 @@ Mesh로부터 기준 view에 대해 geometry 정보를 추출한다.
 이 geometry map은 이후 multi-view 생성 과정에서  
 구조적 정합성을 유지하기 위한 조건으로 사용된다.
 
-![mesh input](../../docs/assets/projects/mv-adapter/mesh_input.png)
+<img src="../../docs/assets/projects/mv-adapter/mesh_input.png" alt="mesh input" width="360">
 
 ---
 
@@ -81,7 +81,6 @@ view 간 구조적 일관성을 유지하기 위한 **명시적 기하 제약**�
 - Output:
   - **6-view realistic multi-view images**
 
-![mv-adapter output](../../docs/assets/projects/mv-adapter/mv_adapter_output_6views.png)
 
 ---
 
