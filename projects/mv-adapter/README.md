@@ -28,7 +28,7 @@ Mesh로부터 기준 view에 대해 geometry 정보를 추출한다.
 이 geometry map은 이후 multi-view 생성 과정에서  
 구조적 정합성을 유지하기 위한 조건으로 사용된다.
 
-![mesh input](../../../docs/assets/projects/mv-adapter/mesh_input.png)
+![mesh input](../../docs/assets/projects/mv-adapter/mesh_input.png)
 
 ---
 
@@ -49,7 +49,7 @@ Mesh로부터 기준 view에 대해 geometry 정보를 추출한다.
 
 | Nano Banana input maps | Nano Banana output |
 |---|---|
-| ![nano banana input maps](../../../docs/assets/projects/mv-adapter/nano_banana_input_maps.png) | ![nano banana output](../../../docs/assets/projects/mv-adapter/nano_banana_output.webp) |
+| ![nano banana input maps](../../docs/assets/projects/mv-adapter/nano_banana_input_maps.png) | ![nano banana output](../../docs/assets/projects/mv-adapter/nano_banana_output.webp) |
 
 ---
 
@@ -66,7 +66,7 @@ view 간 구조적 일관성을 유지하기 위한 **명시적 기하 제약**�
 
 | Normal maps | Position maps |
 |---|---|
-| ![6-view normal maps](../../../docs/assets/projects/mv-adapter/normal_maps_6views.png) | ![6-view position maps](../../../docs/assets/projects/mv-adapter/position_maps_6views.png) |
+| ![6-view normal maps](../../docs/assets/projects/mv-adapter/normal_maps_6views.png) | ![6-view position maps](../../docs/assets/projects/mv-adapter/position_maps_6views.png) |
 
 ---
 
@@ -81,7 +81,7 @@ view 간 구조적 일관성을 유지하기 위한 **명시적 기하 제약**�
 - Output:
   - **6-view realistic multi-view images**
 
-![mv-adapter output](../../../docs/assets/projects/mv-adapter/mv_adapter_output_6views.png)
+![mv-adapter output](../../docs/assets/projects/mv-adapter/mv_adapter_output_6views.png)
 
 ---
 
@@ -97,11 +97,11 @@ view 간 구조적 일관성을 유지하기 위한 **명시적 기하 제약**�
 
 | Front (0) | Right (1) | Back (2) |
 |---|---|---|
-| ![front](../../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_0.png) | ![right](../../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_1.png) | ![back](../../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_2.png) |
+| ![front](../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_0.png) | ![right](../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_1.png) | ![back](../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_2.png) |
 
 | Left (3) | Top (4) | Bottom (5) |
 |---|---|---|
-| ![left](../../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_3.png) | ![top](../../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_4.png) | ![bottom](../../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_5.png) |
+| ![left](../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_3.png) | ![top](../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_4.png) | ![bottom](../../docs/assets/projects/mv-adapter/controlnet_inference_result_view_5.png) |
 
 ---
 
