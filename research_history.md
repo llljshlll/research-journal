@@ -50,8 +50,9 @@
 
 - 입력: **단일 머티리얼 치아 mesh**
 - 목표:
-  1. **일관성 (Consistency)**
+  1. **일관성 (Consistency)** 유지
   2. **실시간 처리 (Real-time inference)**
+  3. **Scene reconstruction**까지 확장 가능한 파이프라인
 - 문제:
   - 렌더링 엔진에서 회전 시
   - 단일 머티리얼 → 리얼리스틱 텍스처 표현이 어려움
