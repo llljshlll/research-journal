@@ -22,7 +22,7 @@
 - post-processing 기반 접근은 **consistency 확보에 구조적 한계**가 있음을 확인
 
 ## Experiments
-- 교수님 보고용 실험 정리: [experiments.md](experiments.md)
+- [experiments.md](experiments.md)
 
 ## References
 - ctrLoRA 구조 분석: [notes/models/stable_diffusion/ctrLoRA.md](../../notes/models/stable_diffusion/ctrLoRA.md)
