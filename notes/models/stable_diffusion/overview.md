@@ -53,7 +53,7 @@ diffusion 과정에 적합한 연속적 잠재 공간을 형성한다.
 ---
 
 ### 2.2 Denoising UNet
-<img src="../../../docs/assets/models/stalbe_diffusion/stable_diffusion_UNet.png"> 
+<img src="../../../docs/assets/models/stable_diffusion/stable_diffusion_UNet.png"> 
 Stable Diffusion의 Denoising UNet은  
 timestep과 텍스트 조건을 함께 입력으로 받아  
 latent space에서 noise를 예측하는 조건부 생성 모델.  
@@ -138,7 +138,7 @@ Attention 연산 이후에는
 FeedForward 네트워크가 적용되며,  
 전체 블록은 residual connection을 통해  
 입력 feature와 안정적으로 결합된다.
-
+ 
 <img src="../../../docs/assets/models/flux/UNet_AttnBlock.png"> 
 
 Attention Block 내부 처리 흐름은 다음과 같다.
