@@ -10,7 +10,7 @@ Transformer, Attention 등 범용 개념은 별도의 `concepts/` 문서에서 �
 
 ## 1. Overview
 Stable Diffusion의 전체 파이프라인은 다음과 같이 요약할 수 있다.
-<img src="../../../docs/assets/models/stable_diffusion/stalbe_diffusion_architecture.png">  
+<img src="../../../docs/assets/models/stable_diffusion/stable_diffusion_architecture.png">  
 
 1. 텍스트 프롬프트를 **Text Encoder (CLIP)** 를 통해 임베딩  
 2. 이미지를 **VAE Encoder**를 통해 latent space로 압축  
@@ -53,7 +53,7 @@ diffusion 과정에 적합한 연속적 잠재 공간을 형성한다.
 ---
 
 ### 2.2 Denoising UNet
-<img src="../../../docs/assets/models/stalbe_diffusion/stalbe_diffusion_UNet.png"> 
+<img src="../../../docs/assets/models/stalbe_diffusion/stable_diffusion_UNet.png"> 
 Stable Diffusion의 Denoising UNet은  
 timestep과 텍스트 조건을 함께 입력으로 받아  
 latent space에서 noise를 예측하는 조건부 생성 모델.  
