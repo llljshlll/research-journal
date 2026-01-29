@@ -24,7 +24,7 @@
   - 기본 시각화 옵션
   - Gaussian silhouette 표시 옵션 활성화 상태
 
-![Supersplat PLY visualization](../../../docs/assets/projects/mv-adapter_skyfall-gs/supersplat_ply.webp)
+![Supersplat PLY visualization](../../docs/assets/projects/skyfall-gs/supersplat_ply.webp)
 
 #### 관찰 사항
 - Gaussian이 alpha blending 없이 기하적으로 시각화됨
@@ -39,7 +39,7 @@
 - 사용 도구: WebGL 3D Gaussian Splat Viewer
 - 입력: 동일한 기본 PLY
 
-![WebGL GS viewer visualization](../../../docs/assets/projects/mv-adapter_skyfall-gs/webgl_gs_viewer.png)
+![WebGL GS viewer visualization](../../docs/assets/projects/skyfall-gs/webgl_gs_viewer.png)
 
 #### 관찰 사항
 - Supersplat과 유사하게 PLY 기반 Gaussian을 시각화
@@ -57,7 +57,7 @@
 - 방식:
   - screen-space alpha blending 기반 GS 렌더링
 
-![Checkpoint-based GS rendering](../../../docs/assets/projects/mv-adapter_skyfall-gs/checkpoint_render.webp)
+![Checkpoint-based GS rendering](../../docs/assets/projects/skyfall-gs/checkpoint_render.webp)
 
 #### 관찰 사항
 - alpha blending을 통해 Gaussian들이 자연스럽게 합성됨
@@ -73,12 +73,12 @@ Gaussian의 위치, 크기, 회전, opacity 등의 기하 파라미터는 포함
 checkpoint 렌더링에서 사용되는 appearance 정보는
 직접적으로 색으로 bake되어 있지 않았습니다.  
   
-![Base PLY without baked color](../../../docs/assets/projects/mv-adapter_skyfall-gs/base_ply_no_color.png)  
+![Base PLY without baked color](../../docs/assets/projects/skyfall-gs/base_ply_no_color.png)  
 > 기본 PLY를 시각화한 결과, geometry 중심 표현만 확인되는 상태
 
 시각화 차이 원인 확인을 위해,
 checkpoint를 이용해 appearance를 PLY에 bake한
-fused PLY를 별도로 생성하였습니다.  
+fused PLY를 별도로 생성함.  
 
 ### 4.1 동작 원리
 
