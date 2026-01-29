@@ -10,7 +10,7 @@ Transformer, Attention 등 범용 개념은 별도의 `concepts/` 문서에서 �
 
 ## 1. Overview
 Stable Diffusion의 전체 파이프라인은 다음과 같이 요약할 수 있다.
-<img src="../../../docs/assets/models/flux/stalbe_diffusion_architecture.png">  
+<img src="../../../docs/assets/models/stable_diffusion/stalbe_diffusion_architecture.png">  
 
 1. 텍스트 프롬프트를 **Text Encoder (CLIP)** 를 통해 임베딩  
 2. 이미지를 **VAE Encoder**를 통해 latent space로 압축  
@@ -27,7 +27,7 @@ Stable Diffusion의 전체 파이프라인은 다음과 같이 요약할 수 있
 
 Stable Diffusion은 diffusion을 **pixel space가 아닌 latent space**에서 수행.  
 이를 위해 **Variational Autoencoder (VAE)** 가 사용됨.  
-<img src="../../../docs/assets/models/flux/stalbe_diffusion_VAE.png">   
+<img src="../../../docs/assets/models/stable_diffusion/stalbe_diffusion_VAE.png">   
 
 - **Encoder**
   - 입력 이미지 x (shape: 3 × H × W)
@@ -53,7 +53,7 @@ diffusion 과정에 적합한 연속적 잠재 공간을 형성한다.
 ---
 
 ### 2.2 Denoising UNet
-<img src="../../../docs/assets/models/flux/stalbe_diffusion_UNet.png"> 
+<img src="../../../docs/assets/models/stalbe_diffusion/stalbe_diffusion_UNet.png"> 
 Stable Diffusion의 Denoising UNet은  
 timestep과 텍스트 조건을 함께 입력으로 받아  
 latent space에서 noise를 예측하는 조건부 생성 모델.  
@@ -74,7 +74,7 @@ UNet은 이미지를 직접 생성하지 않으며,
 
 UNet은 Encoder–Middle–Decoder 구조를 기반으로 하며,  
 downsampling과 upsampling을 통해 다중 해상도에서 latent feature를 처리
-  <img src="../../../docs/assets/models/flux/UNet_architecture.png"> 
+  <img src="../../../docs/assets/models/stalbe_diffusion/UNet_architecture.png"> 
 - Encoder (Down blocks)  
   - 해상도를 점진적으로 감소  
   - 국소적 세부 정보 → 점차 전역적 구조 추출  
@@ -280,8 +280,8 @@ Stable Diffusion에서 텍스트 조건은
 CFG는 conditional / unconditional 예측을 동시에 수행하여  
 텍스트 조건의 강도를 조절하는 기법이다.
 
-- \( \epsilon = \epsilon_{uncond} + s \cdot (\epsilon_{cond} - \epsilon_{uncond}) \)
-- guidance scale \( s \) 로 텍스트 반영 강도 제어
+- `epsilon = epsilon_uncond + s * (epsilon_cond - epsilon_uncond)`
+- guidance scale `s` 로 텍스트 반영 강도 제어
 
 CFG는 **추론 단계에서만 적용**되며,
 모델 구조를 변경하지 않고 조건성을 강화할 수 있다.
@@ -298,8 +298,8 @@ CFG는 **추론 단계에서만 적용**되며,
   - UNet이 noise를 예측하며 latent를 점진적으로 복원
 
 Stable Diffusion은:
-- 데이터 \( x_0 \) 를 직접 복원하지 않고
-- 각 timestep에서의 noise \( \epsilon \) 을 예측하도록 학습된다
+- 데이터 `x_0` 를 직접 복원하지 않고
+- 각 timestep에서의 noise `epsilon` 을 예측하도록 학습된다
 
 ---
 

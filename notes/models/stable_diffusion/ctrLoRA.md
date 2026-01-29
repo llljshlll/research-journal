@@ -210,9 +210,9 @@ LoRA는 **Base ControlNet 위에 부착되는 경량 적응 모듈**로,
 각 condition의 **세부적 특성(local feature)**을 학습한다.
 
 #### 6.2.1 핵심 개념
-- 기존 full fine-tuning에서는 모든 weight \( W \)를 직접 업데이트해야 하지만,  
+- 기존 full fine-tuning에서는 모든 weight `W`를 직접 업데이트해야 하지만,  
   LoRA는 weight 변화를 **저랭크 근사(ΔW = B·A)** 로 표현한다.  
-  - \( A \in \mathbb{R}^{r \times d} \), \( B \in \mathbb{R}^{d \times r} \), \( r \ll d \)
+  - `A in R^(r x d)`, `B in R^(d x r)`, `r << d`
 - 학습 가능한 파라미터 수가 약 **90% 이상 감소**하며,  
   Base ControlNet의 파라미터는 고정된 상태로 유지된다.
 
@@ -229,9 +229,9 @@ LoRA는 **Base ControlNet 위에 부착되는 경량 적응 모듈**로,
 1. Base ControlNet을 고정하고, 새로운 condition 데이터로 LoRA를 학습.  
 2. LoRA는 각 Linear Layer의 **Residual Update** 형태로 삽입됨.  
 3. 학습 완료 후, LoRA를 Base ControlNet과 합성하여 inference 수행:
-   \[
-   W' = W + \Delta W = W + BA
-   \]
+   ```
+   W' = W + Delta W = W + B*A
+   ```
 4. 여러 LoRA를 동시에 합산하여 **Multi-Conditional Generation** 가능.
 
 > 💡 LoRA는 condition별로 독립적으로 저장·배포 가능하며,  
@@ -271,9 +271,9 @@ Base ControlNet + LoRA 입력
 CtrLoRA는 이를 해결하기 위해 **Stable Diffusion의 VAE Encoder**를 condition embedding network로 채택하였다.  
 즉, condition image는 VAE Encoder를 통해 즉시 **latent representation**으로 변환된다.
 
-\[
-z_c = \text{VAE}_{enc}(c)
-\]
+```
+z_c = VAE_enc(c)
+```
 
 - **VAE Encoder**는 원래 이미지를 latent space로 압축하도록 학습되어 있으므로,  
   이미 강력한 시각 표현(visual representation)을 보유.  
@@ -329,15 +329,15 @@ VAE Decoder → 최종 이미지
 각 LoRA는 동일한 Base ControlNet의 feature map에 대해  
 조건별 잔차(residual)를 생성하고 이를 합산한다.
 
-\[
-C_{\theta, \Psi}(z, c) = C_{\theta}(z) + \sum_{i=1}^{N} w_i \cdot L_{\psi_i}(z, c_i)
-\]
+```
+C_{theta, Psi}(z, c) = C_theta(z) + sum_{i=1..N} w_i * L_{psi_i}(z, c_i)
+```
 
-- \( C_{\theta} \): Base ControlNet  
-- \( L_{\psi_i} \): i번째 condition의 LoRA  
-- \( w_i \): 해당 조건의 가중치(weight, 기본값 1.0)  
-- \( z \): latent representation  
-- \( c_i \): 각 condition image의 embedding  
+- `C_theta`: Base ControlNet  
+- `L_{psi_i}`: i번째 condition의 LoRA  
+- `w_i`: 해당 조건의 가중치(weight, 기본값 1.0)  
+- `z`: latent representation  
+- `c_i`: 각 condition image의 embedding  
 
 > 💡 이 구조 덕분에, 여러 조건(예: segmentation + lighting + pose)을  
 > 별도 네트워크 병합 없이 단일 forward pass로 통합 가능하다.
@@ -350,13 +350,13 @@ CtrLoRA는 Stable Diffusion의 denoising 과정과 동일하게 작동한다.
 Base ControlNet과 LoRA의 출력을 UNet에 주입하여  
 latent 공간에서 노이즈를 점진적으로 제거한다.
 
-\[
-\epsilon_\theta(x_t, c) = D(E(x_t), C_{\theta, \Psi}(z, c))
-\]
+```
+epsilon_theta(x_t, c) = D(E(x_t), C_{theta, Psi}(z, c))
+```
 
-- \( x_t \): 노이즈가 추가된 latent 이미지  
-- \( E, D \): Stable Diffusion의 Encoder/Decoder  
-- \( C_{\theta, \Psi} \): Base ControlNet + LoRA 조합  
+- `x_t`: 노이즈가 추가된 latent 이미지  
+- `E, D`: Stable Diffusion의 Encoder/Decoder  
+- `C_{theta, Psi}`: Base ControlNet + LoRA 조합  
 - 출력: 다음 timestep으로 전달될 노이즈 예측값  
 
 Sampling은 일반적으로 **DDIM (50 steps)** 또는 **DPM-Solver**를 사용하며,  
@@ -366,7 +366,7 @@ Classifier-Free Guidance Scale은 **7.5** 전후로 설정한다.
 
 #### 6.4.3 Conditional Strength & Guidance
 
-각 LoRA의 기여도는 가중치 \( w_i \)로 조절 가능하며,  
+각 LoRA의 기여도는 가중치 `w_i`로 조절 가능하며,  
 이 값을 높일수록 해당 조건의 영향력이 커진다.
 
 | Condition | Weight (예시) | 결과 |
@@ -401,5 +401,4 @@ CtrLoRA는 Base ControlNet을 고정한 채 LoRA 모듈만 추가 학습하기 �
 
 > 새로운 condition 추가 시, 전체 모델을 재학습할 필요 없이  
 > LoRA(148MB)만 추가하면 되므로 **GPU 시간 및 저장소 비용을 90% 이상 절감**.
-
 

@@ -38,10 +38,10 @@
 |---|---|
 | ![result_seg_0_2](../../docs/assets/projects/ctrlora_streamdiffusion/result_seg_0.2.webp) | ![result_seg_0_1](../../docs/assets/projects/ctrlora_streamdiffusion/result_seg_0.1.webp) |
 
+
 ---
 
 ## 해석 및 이슈
 
 - segmentation은 색상 정보에, lighting map은 디테일 정보에 영향을 주는 경향
 - 명시적 역할 분리가 없어 **color vs detail 간 간섭**이 발생하는 것으로 판단
-- 결과적으로 multi-condition 상황에서 **consistency 확보가 구조적으로 어려움**

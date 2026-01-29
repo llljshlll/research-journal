@@ -303,8 +303,7 @@ L_RF = E[ || v_θ(z_t, t) - (z_1 - x_0) ||^2 ]
   
 
 - **모델** : 각 위치에서의 velocity (방향 + 크기)를 예측  
-- **ODE Solver** : 예측된 velocity를 시간 간격 \( \Delta t \) 동안 적분하여 실제 이동량 계산  
+- **ODE Solver** : 예측된 velocity를 시간 간격 `delta_t` 동안 적분하여 실제 이동량 계산  
   
 > 모델은 각 위치에서의 local velocity field를 예측하고, ODE solver는 해당 velocity를 시간 간격 Δt 동안 적분하여 실제 latent 이동량을 결정  
-
 

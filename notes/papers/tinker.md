@@ -103,8 +103,8 @@ Edited 3DGS  ← 최종 결과
 모델이 **스스로 학습용 dataset을 생성**.
 
 #### Step 1 — Pairwise Editing
-- 동일 scene의 두 view \(I_a, I_b\) 선택
-- LLM으로 prompt \(P\) 생성
+- 동일 scene의 두 view `I_a, I_b` 선택
+- LLM으로 prompt `P` 생성
 - FLUX Kontext로 editing 수행
 
 ```
@@ -269,5 +269,4 @@ Loss = E || Φ_θ(X_t_input, t) − u(Z_t) ||^2
   - depth-constrained reconstruction 특성
 - **Self-generated dataset 한계**
   - fine detail inconsistency 가능
-
 
