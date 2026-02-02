@@ -36,10 +36,10 @@
 
 | View | Image |
 |----|----|
-| Front | ![](../../docs/assets/projects/skyfall-gs/stage1_front.png) |
-| Back | ![](../../docs/assets/projects/skyfall-gs/stage1_back.png) |
-| Top | ![](../../docs/assets/projects/skyfall-gs/stage1_top.png) |
-| Side | ![](../../docs/assets/projects/skyfall-gs/stage1_side.png) |
+| Front | <img src="../../docs/assets/projects/skyfall-gs/stage1_front.png" width="200"> |
+| Back | <img src="../../docs/assets/projects/skyfall-gs/stage1_back.png" width="200"> |
+| Top | <img src="../../docs/assets/projects/skyfall-gs/stage1_top.png" width="200"> |
+| Side | <img src="../../docs/assets/projects/skyfall-gs/stage1_side.png" width="200"> |
 
 ---
 
@@ -54,12 +54,12 @@
 
 ### 5.1 Checkpoint-wise Comparison
 
-| Checkpoint | Front View | Back View | Top View | Side View | Observation |
-|----|----|----|----|----|----|
-| ckpt 40000 | ![](../../docs/assets/projects/skyfall-gs/stage2_40k_front.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_40k_back.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_40k_top.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_40k_side.png) | 노이즈 감소 시작 |
-| ckpt 50000 | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_front.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_back.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_top.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_side.png) | floating Gaussian 감소 |
-| ckpt 60000 | ![](../../docs/assets/projects/skyfall-gs/stage2_60k_front.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_60k_back.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_60k_top.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_60k_side.png) | 표면 안정성 가장 양호 |
-| ckpt 70000 | ![](../../docs/assets/projects/skyfall-gs/stage2_70k_front.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_70k_back.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_70k_top.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_70k_side.png) | 일부 over-smoothing |
+| Checkpoint | Front View | Back View | Top View | Side View |
+|----|----|----|----|----|
+| ckpt 40000 | ![](../../docs/assets/projects/skyfall-gs/stage2_40k_front.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_40k_back.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_40k_top.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_40k_side.png) |
+| ckpt 50000 | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_front.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_back.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_top.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_side.png) |
+| ckpt 60000 | ![](../../docs/assets/projects/skyfall-gs/stage2_60k_front.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_60k_back.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_60k_top.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_60k_side.png) |
+| ckpt 70000 | ![](../../docs/assets/projects/skyfall-gs/stage2_70k_front.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_70k_back.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_70k_top.png) | ![](../../docs/assets/projects/skyfall-gs/stage2_70k_side.png) |
 
 
 ---
@@ -72,4 +72,3 @@
 | Stage2 (ckpt 50000) | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_video.mp4) |
 
 ---
-
