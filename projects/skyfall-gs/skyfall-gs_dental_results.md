@@ -68,7 +68,8 @@
 
 | Stage | Video |
 |----|----|
-| Stage1 | ![](../../docs/assets/projects/skyfall-gs/stage1_video.mp4) |
-| Stage2 (ckpt 50000) | ![](../../docs/assets/projects/skyfall-gs/stage2_50k_video.mp4) |
+| Stage1 | <video src="../../docs/assets/projects/skyfall-gs/stage1_video.mp4" controls width="320"></video> |
+| Stage2 (ckpt 40000) | <video src="../../docs/assets/projects/skyfall-gs/stage2_40k_video.mp4" controls width="320"></video> |
+| Stage2 (ckpt 50000) | <video src="../../docs/assets/projects/skyfall-gs/stage2_50k_video.mp4" controls width="320"></video> |
 
 ---
