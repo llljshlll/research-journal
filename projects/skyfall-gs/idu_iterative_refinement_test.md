@@ -75,7 +75,11 @@ rendering 단계에서 과도한 noise와 geometry distortion이 발생함.
 - FlowEdit는 원본 구조가 유지된 상태에서 발생한 경미한 blur, shading mismatch, artifact 정리에는 효과적임.
 - 그러나 GS가 크게 붕괴되어 geometry 왜곡이나 강한 noise가 발생한 경우, 해당 상태 자체를 안정화시키거나 구조적으로 복원하지는 못함.
 
-추가적으로 확인된 현상:
+| Rendering (before diffusion) | Refine (after diffusion) | Rendering (before diffusion) | Refine (after diffusion) |
+|---|---|---|---|
+| <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z15.0_render.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z15.0_refined_masked.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z25.0_render.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z25.0_refined.png" width="260"> |
+
+
 - Seen view에서 refinement 후 재학습을 반복해도,
   Unseen 영역의 품질은 거의 개선되지 않음.
 - 이는 Stage2가 missing information을 생성하는 단계가 아니라,
