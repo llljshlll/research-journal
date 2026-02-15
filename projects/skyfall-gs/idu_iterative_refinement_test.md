@@ -50,7 +50,7 @@ rendering 단계에서 과도한 noise와 geometry distortion이 발생함.
 |------|------------------|-------------------|
 | V1 | <img src="../../docs/assets/projects/skyfall-gs/stage2/5_stage1/00000.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/5_c_80000/00000.png" width="260"> |
 | V2 | <img src="../../docs/assets/projects/skyfall-gs/stage2/5_stage1/00003.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/5_c_80000/00003.png" width="260"> |
-| V3 | <img src="../../docs/assets/projects/skyfall-gs/stage2/5_stage1/00005.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/5_c_80000/00005.png" width="260"> |
+| V3 | <img src="../../docs/assets/projects/skyfall-gs/stage2/5_stage1/00004.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/5_c_80000/00004.png" width="260"> |
 
 
 ---
@@ -59,9 +59,10 @@ rendering 단계에서 과도한 noise와 geometry distortion이 발생함.
 
 | View | Stage1 Rendering | Stage2 (idu80000) |
 |------|------------------|-------------------|
-| V1 | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_stage1/00000.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_c_80000/00000.png" width="260"> |
+| V1 | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_stage1/00001.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_c_80000/00001.png" width="260"> |
 | V2 | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_stage1/00005.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_c_80000/00005.png" width="260"> |
 | V3 | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_stage1/00014.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_c_80000/00014.png" width="260"> |
+| V4 | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_stage1/00016.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/18_c_80000/00016.png" width="260"> |
 
 
 #### +15° Rotation (3 Views)
