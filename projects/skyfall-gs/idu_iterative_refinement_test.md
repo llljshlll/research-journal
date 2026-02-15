@@ -77,16 +77,11 @@ rendering 단계에서 과도한 noise와 geometry distortion이 발생함.
 
 | Rendering (before diffusion) | Refine (after diffusion) | Rendering (before diffusion) | Refine (after diffusion) |
 |---|---|---|---|
-| <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z15.0_render.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z15.0_refined_masked.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z25.0_render.png" width="260"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z25.0_refined.png" width="260"> |
+| <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z15.0_render.png" width="300"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z15.0_refined_masked.png" width="300"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z25.0_render.png" width="300"> | <img src="../../docs/assets/projects/skyfall-gs/stage2/train/controlnet_inference_result_view_1_rot_z25.0_refined.png" width="300"> |
 
 
 - Seen view에서 refinement 후 재학습을 반복해도,
-  Unseen 영역의 품질은 거의 개선되지 않음.
-- 이는 Stage2가 missing information을 생성하는 단계가 아니라,
-  기존 appearance를 재정렬하는 단계이기 때문임.
-- 붕괴된 GS를 입력으로 사용할 경우,
-  diffusion은 이를 구조적으로 복원하지 못하고
-  일관성 없는 texture hallucination을 유도할 수 있음.
+  Unseen 영역의 품질은 거의 개선되지 않음.(특히 치아 안쪽)
 
-결론:  
-- GS가 일정 수준 이상 붕괴되면, Stage2만으로는 일정 수준 이상의 품질 회복이 불가능함.
+
+> 즉, GS가 일정 수준 이상 붕괴되면, FlowEdit만으로는 일정 수준 이상의 품질 회복이 불가능함.
