@@ -22,7 +22,7 @@ GaMeS 해결 방식
 3. Gaussian parameter 최적화  
 4. Gaussian splatting renderer로 image 생성  
 
-<img src="../../../docs/assets/projects/skyfall-gs/references/GaMeS_pipeline.png" width="460">
+<img src="../../../docs/assets/projects/skyfall-gs/references/GaMeS_pipeline.png" width="760">
 ---
 
 ## Gaussian Placement
