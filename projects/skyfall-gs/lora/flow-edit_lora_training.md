@@ -53,16 +53,6 @@ FLUX transformer는 **Double Stream Block × 19** + **Single Stream Block × 38*
 
 (이미지 첨부 /Users/jangseohyeon/Desktop/연구실/research-journal/docs/assets/projects/skyfall-gs/LoRA/LoRA_single_stream.png)
 
-### LoRA 설정 (dental_v1 기준)
-
-| 항목 | 값 |
-|---|---|
-| Target modules | 11개 패턴 (Q/K/V, output proj, FFN) |
-| 총 LoRA 레이어 수 | 323개 |
-| Rank (r) | 4 |
-| Alpha | 4 |
-| Trainable params | 10,739,712 (0.09%) |
-| Base model params | 11.9B |
 
 ---
 
@@ -79,22 +69,9 @@ FLUX transformer는 **Double Stream Block × 19** + **Single Stream Block × 38*
 
 
 ---
-### 학습 명령
 
-```bash
-# 처음부터 학습
-conda run -n skyfall-gs_copy python LoRA/train_flux_lora.py \
-    --config LoRA/configs/dental.yaml
 
-# 체크포인트에서 재개 (epoch 30 → 70)
-conda run -n skyfall-gs_copy python LoRA/train_flux_lora.py \
-    --config LoRA/configs/dental.yaml \
-    --resume_from LoRA/output/dental_v1/checkpoint_epoch30 \
-    --start_epoch 30 \
-    --num_epochs 70
-```
-
-### 학습 설정 (`configs/dental.yaml`)
+### 학습 설정 
 
 ```yaml
 lora_rank: 4
@@ -109,7 +86,6 @@ use_8bit_adam: true
 
 ---
 
-
 ### 결과 비교
 
 | Epoch | Input | Base FLUX | LoRA result |
@@ -119,32 +95,3 @@ use_8bit_adam: true
 | 30 | ![](<!-- input -->) | ![](<!-- base -->) | ![](<!-- ep30 -->) |
 
 ---
-
-## 파일 구조
-
-```
-LoRA/
-├── train_flux_lora.py      # 학습 스크립트
-├── test_flowedit.py        # FlowEdit + LoRA 추론
-├── flowedit_with_lora.py   # 단일 이미지 추론 (legacy)
-├── configs/
-│   └── dental.yaml         # 학습 설정
-├── dataset/
-│   ├── images/source/      # 학습 source 이미지
-│   ├── images/target/      # 학습 target 이미지
-│   ├── test/               # 테스트 이미지
-│   ├── metadata.jsonl      # 캡션 및 페어 정보
-│   └── prepare_dataset.py  # 데이터셋 전처리
-└── output/
-    └── dental_v1/
-        ├── checkpoint_epoch5/
-        ├── checkpoint_epoch10/
-        └── ...
-```
-
----
-
-## Notes
-
-- **FlowEdit_utils.py 버그 수정**: diffusers ≥ 0.29에서 `vae_scale_factor=8`로 변경되어 `prepare_latents`의 image_ids 계산이 틀리는 문제 → `_prepare_latent_image_ids`를 latent 실제 크기 기준으로 직접 호출하도록 수정
-- **QLoRA + PEFT**: `prepare_model_for_kbit_training`은 LLM 전용(get_input_embeddings 필요)이므로 diffusion transformer에 미적용, `requires_grad_(False)` + `get_peft_model()` 순서로 처리
