@@ -67,8 +67,7 @@ Skyfall-GS 파이프라인에서 6-view 입력에 대해 **GaMeS (Gaussian Mesh 
 | <img src="../../../docs/assets/projects/skyfall-gs/results/2026_03/mesh.png" width="560"> |
 
 - 결과:
-  - 일부 개선됨 (특히 빈 영역 완화)
-  - 그러나 품질이 완전히 회복되지는 않음
+  - 여전히 치아 앞부분만 생성 안됨
 
 | Stage | Front (0) | Right (1) | Back (2) | Left (3) | Top (4) | Bottom (5) |
 |---|---|---|---|---|---|---|
