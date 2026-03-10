@@ -50,7 +50,7 @@ target image + target_text  →  flow matching loss   (Vt_tar 개선)
 
 ### 적용 위치
 
-FLUX transformer는 **Double Stream Block × 19** + **Single Stream Block × 38** 으로 구성됩니다.
+FLUX transformer는 **Double Stream Block × 19** + **Single Stream Block × 38** 으로 구성
 
 **Double Stream Block**
 
@@ -78,6 +78,8 @@ FLUX transformer는 **Double Stream Block × 19** + **Single Stream Block × 38*
 
 ---
 
+## Results
+
 ### 결과 비교
 
 | View | Input | LoRA result (epoch30) | LoRA result (epoch70) |
@@ -89,6 +91,7 @@ FLUX transformer는 **Double Stream Block × 19** + **Single Stream Block × 38*
 | 00004 | <img src="../../../docs/assets/projects/skyfall-gs/LoRA/ori/00004.png" width="180"> | <img src="../../../docs/assets/projects/skyfall-gs/LoRA/30_epoch/00004.png" width="180"> | <img src="../../../docs/assets/projects/skyfall-gs/LoRA/70_epoch/00004.png" width="180"> |
 | 00005 | <img src="../../../docs/assets/projects/skyfall-gs/LoRA/ori/00005.png" width="180"> | <img src="../../../docs/assets/projects/skyfall-gs/LoRA/30_epoch/00005.png" width="180"> | <img src="../../../docs/assets/projects/skyfall-gs/LoRA/70_epoch/00005.png" width="180"> |
 
+
 ---
 
 ### 학습 설정 
@@ -99,7 +102,25 @@ lora_alpha: 4
 num_epochs: 70
 learning_rate: 1.0e-4
 batch_size: 1
-train_mode: "both"
-use_qlora: true
-use_8bit_adam: true
 ```
+
+---
+
+### 결과 분석
+**근본 원인 가설:**
+LoRA는 "노이즈를 제거하는 방식" 자체를 학습하지만, **무엇을 어떻게 제거해야 하는지**에 대한 정보가 없음.
+치아 경계가 어디여야 하는지, 표면 형태가 어때야 하는지를 모델이 알 수 없기 때문에
+일반적인 denoise 패턴만 학습하고 치과 도메인에 맞는 결과를 잘 생성하지 못함.
+
+=> controlNet 사용
+
+ControlNet은 pretrained 모델로 **추론 시 외부 조건을 직접 주입**할 수 있음
+메시에서 이미 정확한 segmentation/normal map을 가지고 있으므로,
+이를 condition으로 활용하면 "어디를 어떻게 고쳐야 하는지"를 명시적으로 지정 가능.
+
+- 잇몸 경계 교정 → segmentation condition
+- 치아 표면 형태 → normal/curvature condition
+- gradient/학습 없이 추론 시 직접 주입 가능
+
+> flow edit 기반 controlNet: [2026_03_flow-edit_control-net](./2026_03_flow-edit_control-net.md)
+> stable diffusion 기반 controlNet: [2026_03_sd_edit](./2026_03_sd_edit.md)
