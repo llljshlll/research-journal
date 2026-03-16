@@ -12,7 +12,7 @@
 
 | mesh | reference image |
 |---|---|
-| <img src="../../../docs/assets/projects/skyfall-gs/results/2026_03/mesh2.png" width="560">| <img src="../../../docs/assets/projects/skyfall-gs/results/2026_03/MaterialMVP/reference.jpg" width="180"> |
+| <img src="../../../docs/assets/projects/skyfall-gs/results/2026_03/mesh2.png" width="400">| <img src="../../../docs/assets/projects/skyfall-gs/results/2026_03/MaterialMVP/reference.jpg" width="400"> |
 
 - MaterialMVP 논문/공개 구현의 기본 설정에서 원본 mesh를 수정하지 않고 고정하는 방향으로만 수정
 > 기존 MaterialMVP는 원본 triangle을 그대로 쓰는 게 아니라 추론 전에 triangle 수를 줄이거나 메쉬를 다시 정리한 white_mesh_remesh.obj를 사용함
