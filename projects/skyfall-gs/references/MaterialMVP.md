@@ -15,15 +15,13 @@
   - front view는 맞아도 back/side에서 일관성 붕괴
 - image-conditioned 방식:
   - 입력 이미지를 따라가지만 albedo/MR 정렬 불량
-  - lighting 정보가 재질(texture)에 섞여 들어가는 문제
+  - lighting 정보가 texture에 섞여 들어가는 문제
 
 MaterialMVP가 해결하려는 포인트:
 
 1. **multi-view consistency**
 2. **illumination-invariant material generation**
 3. **albedo와 MR(metallic+roughness) 정렬**
-
-<img src="../../../docs/assets/projects/skyfall-gs/references/MaterialMVP_pages/MaterialMVP_page1.png" width="760">
 
 ---
 
@@ -38,6 +36,7 @@ MaterialMVP가 해결하려는 포인트:
 - metallic map
 - roughness map
 
+
 핵심 구조:
 
 1. mesh를 normal/position map 형태로 렌더링
@@ -46,7 +45,7 @@ MaterialMVP가 해결하려는 포인트:
 4. Consistency-Regularized Training으로 조명/시점 변화에 강건화
 5. MCAA로 albedo와 MR의 공간 정렬을 유지
 
-<img src="../../../docs/assets/projects/skyfall-gs/references/MaterialMVP_pages/MaterialMVP_page3.png" width="760">
+<img src="../../../docs/assets/projects/skyfall-gs/references/materialMVP_pipeline.png" width="760">
 
 ---
 
@@ -108,7 +107,6 @@ Disney Principled BRDF 표현을 사용하며 재질을 아래 3개로 분해:
 - `p = 0.4`: point light image를 우선 선택
 - 결과적으로 `(I1, I2)`는 pose/light가 조금 다른 쌍이 됨
 
-<img src="../../../docs/assets/projects/skyfall-gs/references/MaterialMVP_pages/MaterialMVP_page4.png" width="760">
 
 ### 2.2 Loss Design
 
@@ -177,66 +175,22 @@ MR 채널:
 - albedo와 MR의 분포 차이를 명시적으로 학습
 - 채널별 역할 분리를 강화
 
----
+`Code Note`:
+- 현재 코드 기준 learnable token은 `77 x 1024` 길이의 CLIP token 형태로 구현
+  - `learned_text_clip_albedo`
+  - `learned_text_clip_mr`
+  - `learned_text_clip_ref`
 
-## 4. Experiments
+### 3.3 구현 관점 보정 (Code-level)
 
-### 4.1 Setup
-
-- 학습 데이터:
-  - Objaverse + Objaverse-XL에서 70k assets
-- object별 렌더:
-  - elevation `{-20°, 0°, 20°, random}`
-  - 각 elevation 24 view
-  - 해상도 `512 x 512`
-- 최적화:
-  - AdamW
-  - learning rate `5e-5`
-  - warmup 2000 steps
-- initialization:
-  - SD2.1 ZSNR checkpoint
-
-### 4.2 Quantitative Results (논문 Table 1 요약)
-
-이미지 조건 기반 비교에서 MaterialMVP가 최상위 성능 보고:
-
-- `CLIP-FID`: 24.78 (낮을수록 좋음)
-- `FID`: 168.5 (낮을수록 좋음)
-- `CMMD`: 2.191 (낮을수록 좋음)
-- `CLIP-I`: 0.9207 (높을수록 좋음)
-- `LPIPS`: 0.1211 (낮을수록 좋음)
-
-### 4.3 Qualitative / Ablation
-
-- illumination invariance:
-  - 입력 조명이 달라도 물성 맵이 안정적
-- global consistency:
-  - front/back/side 패턴 일관성 유지
-- ablation:
-  - one-stage가 two-stage(SuperMat) 대비 안정적
-  - consistency loss 제거 시 metallic 과예측 경향
-  - MCAA 제거 시 albedo/MR 미정렬로 blur/artifact 증가
-
-<img src="../../../docs/assets/projects/skyfall-gs/references/MaterialMVP_pages/MaterialMVP_page6.png" width="760">
-<img src="../../../docs/assets/projects/skyfall-gs/references/MaterialMVP_pages/MaterialMVP_page7.png" width="760">
-<img src="../../../docs/assets/projects/skyfall-gs/references/MaterialMVP_pages/MaterialMVP_page8.png" width="760">
+- 논문 도식은 `Z_albedo`, `Z_mr`가 크게 분리된 것처럼 보이지만,
+  실제 코드는 **shared UNet backbone + 부분 분기 attention** 구조에 가까움
+- 즉 `albedo UNet` / `MR UNet`을 완전 분리해 두 개 돌리는 방식이 아니라,
+  공통 backbone 위에서 channel-aware conditioning을 주는 형태
+- 또한 attention 결합은 주로 concat이 아니라 residual 누적(`h = h + branch_out`) 방식으로 동작
 
 ---
 
-## 5. 우리 프로젝트 관점에서의 포인트
-
-치아 도메인 관점에서 특히 유효한 지점:
-
-1. `Consistency-Regularized Training`
-   - reference perturbation에 대한 출력 안정화 아이디어는
-     우리 IDU/novel-view consistency 문제와 직접 연결됨
-2. `Dual-Channel + Alignment`
-   - appearance와 물성/geometry 관련 채널을 분리해 다루는 설계는
-     조건 간섭(condition interference) 완화에 유용
-3. `Illumination disentanglement`
-   - 입력 조명에 종속되지 않는 맵 생성은 dental rendering 파이프라인에서 중요
-
----
 
 ## Reference
 
