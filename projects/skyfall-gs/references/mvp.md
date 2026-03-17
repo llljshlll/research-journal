@@ -1,849 +1,1379 @@
-# MaterialMVP: Code-Accurate Notes
+질문과 답
 
-`MaterialMVP`는 `3D mesh + reference image`를 입력으로 받아,  
-멀티뷰 일관성을 유지하는 `albedo`와 `MR(metallic-roughness)` 이미지를 생성한 뒤 이를 다시 UV texture로 베이킹하는 시스템이다.
+1. 그러면 각 view들은 b, n, c, h, w에서 n이 view개수로 처리되는거지?, 그럼 position이랑 normal은 어캐 처리돼? 채널 수가 늘어나? 아니면 그냥 h, w에 concat돼?
 
-이 문서는 논문 개념도를 그대로 옮기는 문서가 아니라, **현재 저장소 코드 기준으로 실제 구현이 어떻게 되어 있는지**를 정리한 메모다.
+답:
 
----
+네. view 차원은 기본적으로 `n`으로 처리됩니다.
 
-## 1. 현재 코드 기준 전체 파이프라인
+하지만 현재 코드에서 실제 생성 latent는 view 하나만 있는 게 아니라 PBR 차원까지 같이 묶여서 다뤄집니다.
 
-엔트리 포인트:
+대표 shape는:
 
-- [demo.py](/home/diglab/workspace/projects/MaterialMVP/demo.py)
-- [textureGenPipeline.py](/home/diglab/workspace/projects/MaterialMVP/textureGenPipeline.py)
+- 생성 대상 latent: `B x N_pbr x N_view x C x H x W`
+- normal latent: `B x N_view x C x H x W`
+- position latent: `B x N_view x C x H x W`
 
-실행 흐름:
+그리고 [materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py) 의 `UNet2p5DConditionModel.forward()`에서:
 
-1. mesh 로드
-2. `xatlas`로 UV unwrap
-3. view selection
-4. 선택된 view에서 `normal map`, `position map` 렌더링
-5. multi-view diffusion 모델로 `albedo`, `mr` 뷰 이미지 생성
-6. super-resolution
-7. 각 view를 UV texture space로 back-project
-8. cosine-weighted bake
-9. 빈 영역 UV inpaint
-10. OBJ/GLB 저장
+- `embeds_normal`을 `unsqueeze(1).repeat(1, N_pbr, ...)`
+- `embeds_position`도 같은 방식으로 `N_pbr`축으로 복제
+- 그 다음 `torch.cat(sample, dim=-3)`로 concat
 
-중요:
-
-- 현재 코드 기본값은 `use_remesh=False`
-- 즉 기본 동작은 **원본 mesh geometry를 유지하고 texture만 생성**하는 쪽이다
-- 단, UV unwrap은 다시 수행하므로 UV는 새로 잡힌다
-
----
-
-## 2. 출력은 무엇인가
-
-현재 구현에서 diffusion 모델이 직접 생성하는 것은:
-
-- `albedo` multi-view images
-- `mr` multi-view images
-
-여기서 `mr`는 metallic과 roughness를 함께 담는 맵이다.
-
-즉 문서나 그림에서 종종 `albedo / metallic / roughness`로 나눠 적지만,  
-**현재 코드의 diffusion 출력 채널은 `albedo`와 `mr` 두 종류**다.
-
-관련 코드:
-
-- [textureGenPipeline.py](/home/diglab/workspace/projects/MaterialMVP/textureGenPipeline.py)
-- [utils/multiview_utils.py](/home/diglab/workspace/projects/MaterialMVP/utils/multiview_utils.py)
-
----
-
-## 3. Base Model
-
-학습/추론 베이스는 `Stable Diffusion 2.1` 계열이다.
-
-설정:
-
-- [cfgs/v1.yaml](/home/diglab/workspace/projects/MaterialMVP/cfgs/v1.yaml)
-
-핵심 항목:
-
-- `stable_diffusion_config.pretrained_model_name_or_path: stabilityai/stable-diffusion-2-1`
-- `noise_in_channels: 12`
-
-즉 원본 SD2.1을 그대로 쓰는 것이 아니라, **입력 채널과 attention 구조를 바꾼 UNet**을 사용한다.
-
----
-
-## 4. 코드 기준 모델 구조
-
-핵심 파일:
-
-- [materialmvp/pipeline.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/pipeline.py)
-- [materialmvp/model.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/model.py)
-- [materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py)
-
-전체 개념:
-
-```text
-reference image
-  -> VAE latent
-  -> DINOv2 feature
-
-normal maps
-  -> VAE latent
-
-position maps
-  -> VAE latent
-  -> voxel index / pose-aware alignment
-
-learned PBR tokens
-  -> albedo token
-  -> mr token
-
-all conditions
-  -> modified SD2.1 UNet
-  -> multi-view albedo images + multi-view mr images
-```
-
----
-
-## 5. UNet에서 실제로 바뀐 부분
-
-### 5.1 Input channel 확장
-
-기본 SD UNet 입력은 noisy latent만 받지만, 현재 구현은 여기에 geometry condition latent를 같이 넣는다.
-
-대략:
-
-```text
-sample = [noisy_latent | normal_latent | position_latent]
-```
-
-그래서 [cfgs/v1.yaml](/home/diglab/workspace/projects/MaterialMVP/cfgs/v1.yaml) 에 `noise_in_channels: 12`가 들어가고,  
-[train.py](/home/diglab/workspace/projects/MaterialMVP/train.py) 에서 `conv_in`을 새로 만들어 입력 채널 수를 늘린다.
-
-### 5.2 UNet block 교체
-
-원래 `UNet2DConditionModel` 내부 transformer block들을  
-`Basic2p5DTransformerBlock`으로 바꾼다.
-
-관련 코드:
-
-- [materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py)
-
-즉 backbone을 새로 설계한 게 아니라, **SD2.1 UNet의 attention block들을 2.5D 멀티뷰용으로 확장**한 형태다.
-
-### 5.3 활성화된 기능 플래그
-
-현재 구현은 아래를 모두 켜 둔다.
-
-- `use_ma = True`
-- `use_ra = True`
-- `use_mda = True`
-- `use_dino = True`
-- `use_position_rope = True`
-- `use_learned_text_clip = True`
-- `use_dual_stream = True`
-
-즉 논문 그림의 핵심 요소들은 현재 코드에서도 대부분 활성화되어 있다.
-
----
-
-## 6. Attention 구조: 그림과 코드의 차이
-
-논문 그림은 기능 블록을 병렬 분기처럼 단순화해서 그린다.  
-하지만 **현재 코드 구현은 대부분 residual add를 순차적으로 누적하는 구조**다.
-
-코드 기준 실행 순서는 대략 아래와 같다.
-
-```text
-norm
--> material-aware self attention (attn1)
--> + reference attention (attn_refview)
--> + multiview attention (attn_multiview)
--> + cross attention to text / learned PBR tokens (attn2)
--> + dino attention (attn_dino)
--> + FFN
-```
-
-즉 제가 이전에 설명한
-
-`material attn -> reference attn -> mv attn -> cross attn -> dino attn -> FFN`
-
-은 **코드 실행 순서 기준으로 맞다**.
-
-반면 그림의
-
-- `Z_albedo`, `Z_mr` 분기
-- `MCAA`
-- `Reference Branch`
-- `MV Attn`
-
-은 이 순차 구조를 개념적으로 압축해서 보여주는 표현이다.
-
-### 6.1 residual add가 의미하는 것
-
-여기서 residual add는 말 그대로 같은 shape의 tensor를 원소별로 더하는 것이다.
-
-예:
-
-```python
-h = h + branch_output
-```
-
-즉 concat이 아니라, 기존 표현 위에 각 attention branch가 만든 보정값을 누적한다.
-
-### 6.2 MCAA와 plain self-attn의 관계
-
-현재 구현에서는 일반 self-attention 자리가 `MDA / material-aware self-attention`으로 대체된다.
-
-즉:
-
-- 별도로 plain self-attn이 하나 더 있는 게 아님
-- `attn1` 자체가 확장된 self-attn 역할을 함
-
-### 6.3 RefAttn은 어디에 붙는가
-
-그림은 RefAttn이 `MCAA 내부 Z_albedo의 K,V`에 직접 들어가는 것처럼 보일 수 있다.  
-현재 코드 구현은 그렇게 딱 한 블록 안에 삽입하기보다, **MCAA 이후 별도 reference branch로 계산한 결과를 residual로 더하는 형태**에 가깝다.
-
-다만 기능적으로는 그림과 연결된다.  
-왜냐하면 현재 코드도 **reference attention은 albedo branch 기준으로만 사용**하기 때문이다.
-
-관련 주석:
-
-- [materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py)
-  - `Only using albedo features for reference attention`
+합니다.
 
 즉 정리하면:
 
-- 그림: 개념적 표현
-- 코드: `attn1` 후 `attn_refview`를 별도 residual branch로 추가
-- 하지만 RefAttn이 albedo branch 중심이라는 큰 방향은 맞음
-
-### 6.4 MV / Cross / Dino는 어떻게 합쳐지나
-
-이들도 concat이 아니라 순차적인 residual add다.
+- `normal`, `position`은 `H, W` 방향 concat이 아님
+- latent로 인코딩된 뒤 `channel(C)` 방향 concat임
+- 그래서 `noise_in_channels=12`가 됩니다
 
 개념적으로:
 
 ```text
-h1 = h0 + MCAA(h0)
-h2 = h1 + RefAttn(h1, ref)
-h3 = h2 + MVAttn(h1 or h2 계열)
-h4 = h3 + CrossAttn(h3, text/pbr token)
-h5 = h4 + DinoAttn(h4, dino)
-h6 = h5 + FFN(h5)
+sample = [noisy_pbr_latent | normal_latent | position_latent]
 ```
 
-정확한 내부 입력은 block 구현 세부에 따라 조금 다르지만,  
-설명 수준에서는 **각 branch가 같은 hidden state 공간에서 residual로 누적된다**고 이해하면 된다.
+즉 view는 `N_view` 축으로 유지되고, normal/position은 채널 쪽으로 붙습니다.
 
----
 
-## 7. PBR 채널 분리 방식
+2. material-aware self attention이랑 MCAA랑 똑같은거야?
 
-현재 구현은 `albedo UNet`과 `mr UNet` 두 개가 따로 있는 구조가 아니다.
+답:
 
-대신:
+완전히 같은 말로 쓰면 안 됩니다.
 
-- 하나의 UNet backbone을 공유하고
-- tensor를 `B x N_pbr x N_view x ...` 형태로 다루고
-- 일부 attention processor와 learned token이 PBR별로 분기된다
+- 논문/그림에서 말하는 `MCAA`는 개념 블록
+- 코드에서 실제 self-attention 자리를 대체하는 건 `material-aware self attention` 또는 `MDA`에 가깝습니다
+
+현재 코드에서는 plain self-attention 자리에 [materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py)의 `attn1`이 들어가고, `use_mda=True`일 때 이 `attn1`이 PBR-aware processor를 사용합니다.
+
+즉 코드 기준으로는:
+
+- `MCAA` = 논문 그림의 상위 개념
+- `material-aware self attention` = 실제 구현에서 self-attention 자리를 대체하는 블록
+
+이라고 보는 게 안전합니다.
+
+
+3. albedo랑 MR branch는 어디서 합쳐져? reference, multivew, cross attention에서 다 나뉘어져서 attention돼?
+
+답:
+
+현재 코드는 `albedo UNet`, `MR UNet` 두 개가 따로 있는 구조가 아닙니다.
 
 즉:
 
-- backbone 공유
-- PBR conditioning과 일부 attention 경로만 분화
+- backbone은 공유
+- tensor 안에서 `N_pbr` 축으로 `albedo`, `mr`를 함께 들고 감
+- 일부 attention processor와 learned token만 PBR-aware하게 처리
 
-이다.
+합니다.
 
-이 점은 그림을 볼 때 오해하기 쉽다.  
-그림상 `Z_albedo`, `Z_mr`가 완전 독립 분기처럼 보이지만, 코드에서는 **완전 분리 네트워크가 아니라 shared backbone + partial specialization** 구조다.
+그래서 "어디서 합쳐진다"기보다 처음부터 shared backbone 안에서 같이 흐른다고 보는 게 맞습니다.
 
----
+다만 세부적으로 보면:
 
-## 8. Learnable Material Embeddings
+- `attn1(material-aware self attention)`은 `B x N_pbr x N_view x L x C` 구조를 직접 받음
+- `multiview attn`도 `N_pbr`을 유지한 채 view들을 묶어서 attention
+- `cross attn`도 `encoder_hidden_states`가 PBR별 token을 가짐
+- `reference attn`은 예외적으로 albedo branch 기준으로 계산한 뒤 전체 hidden state에 residual로 다시 퍼짐
 
-이전 설명에서 `16 x 1024`라고 적은 건 현재 코드 기준으로 맞지 않는다.
+즉:
 
-현재 구현은 [materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py) 에서:
+- `albedo`, `mr`는 처음부터 끝까지 완전 분리된 두 네트워크가 아님
+- backbone 내부에서 함께 흐르되, 일부 attention 경로는 PBR-aware
+- RefAttn은 특히 albedo branch 중심
+
+입니다.
+
+>> 그러면 모든 attention에서 albedo랑 mr은 따로 흘러? 즉, 영향을 안주고받아?
+
+답:
+
+완전히 따로 흘러서 서로 영향을 안 주는 구조는 아닙니다.
+
+정확히는:
+
+- tensor 차원상으로는 `N_pbr` 축이 분리되어 있어서 `albedo`, `mr`를 구분해서 들고 갑니다
+- 하지만 backbone UNet은 공유합니다
+- 그리고 같은 block 안에서 같은 hidden state 공간에서 같이 처리됩니다
+
+즉:
+
+- `완전 분리 네트워크`는 아님
+- `PBR-aware separation`은 있음
+
+입니다.
+
+좀 더 구체적으로:
+
+1. `attn1(material-aware self attn)`은 `B x N_pbr x N_view x L x C`를 직접 받으므로 PBR 구분이 반영됩니다
+2. `multiview attn`도 `N_pbr`을 유지한 채 view들을 섞습니다
+3. `cross attn`도 PBR별 learned token을 받습니다
+4. `reference attn`은 albedo branch 기준으로 계산된 뒤 다시 전체 hidden state에 residual로 더해집니다
+
+그래서 결과적으로:
+
+- `albedo`, `mr`는 따로 token/분기를 가지지만
+- shared backbone과 residual add 때문에 간접적인 영향은 주고받습니다
+
+즉 "완전히 독립"도 아니고, "완전히 섞임"도 아닙니다.  
+가장 정확한 표현은:
+
+```text
+shared backbone 위에서 PBR-aware하게 분리되어 흐르지만, 완전히 차단된 두 branch는 아니다.
+```
+
+>>> 그러면 attention으로 정보를 주고받지는 않는거지?
+
+답:
+
+완전히 안 주고받는다고 보면 안 됩니다.
+
+정확히는:
+
+- `albedo`와 `mr`는 `N_pbr` 축으로 구분되어 흐릅니다
+- 그래서 "같은 토큰으로 완전히 섞여버리는 것"은 아닙니다
+- 하지만 backbone은 공유하고, 일부 branch 출력은 전체 hidden state에 residual로 더해집니다
+
+즉:
+
+- `직접적으로 분리된 attention 경로`는 있음
+- `간접적으로 서로 영향`은 있음
+
+입니다.
+
+예를 들어:
+
+- `attn1`은 PBR-aware하게 작동하므로 albedo/mr를 구분해서 봅니다
+- 그런데 block 출력은 결국 shared hidden state로 누적됩니다
+- `RefAttn`은 albedo branch에서 계산되지만 결과가 다시 전체 hidden state에 더해집니다
+
+그래서 "attention을 통해 전혀 정보를 안 주고받는다"는 건 아닙니다.  
+더 정확한 표현은:
+
+```text
+PBR별로 구분된 표현을 유지하면서도, shared backbone과 residual add 때문에 간접적인 상호작용은 있다.
+```
+
+4. 모든 attention 블록에서 수행돼? down block, mid block, ujp block 전부 다?
+
+답:
+
+네. 현재 구현은 cross-attention이 있는 transformer block 전반에 적용합니다.
+
+[materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py)의 `init_attention()`을 보면:
+
+- `down_blocks`
+- `mid_block`
+- `up_blocks`
+
+를 모두 순회하면서 `BasicTransformerBlock`을 `Basic2p5DTransformerBlock`으로 교체합니다.
+
+즉 cross-attention이 달린 transformer block이면:
+
+- down
+- mid
+- up
+
+전부 확장된 2.5D block으로 바뀝니다.
+
+
+5. 원래 기본 형태는 self attn -> cross attn -> FFN 인데 이 사이사이에 multi view attn, reference attn이 끼고, self attention이 material-aware self attention으로 치환된 거 맞아? 맞다면, 추가되고 치환된 attention들의 input, output 과 역할 알려줘
+
+답:
+
+네. 코드 기준으로 그렇게 이해하면 맞습니다.
+
+원래 SD block:
+
+```text
+self attn -> cross attn -> FFN
+```
+
+현재 block:
+
+```text
+material-aware self attn
+-> + reference attn
+-> + multiview attn
+-> + cross attn
+-> + dino attn
+-> FFN
+```
+
+각 블록의 입력/출력/역할은 아래와 같습니다.
+
+`1) material-aware self attn (attn1)`
+
+- 입력:
+  - `norm_hidden_states`
+  - shape 개념상 `B x N_pbr x N_view x L x C`
+- 출력:
+  - 같은 shape의 hidden state 보정값
+- 역할:
+  - plain self-attn 대신 albedo/mr 구분을 반영한 self-attn 수행
+
+`2) reference attn (attn_refview)`
+
+- 입력:
+  - 현재 block의 albedo branch hidden state
+  - reference branch에서 미리 cache된 `condition_embed_dict[layer_name]`
+- 출력:
+  - 다시 전체 `N_pbr x N_view` 형태로 reshape된 residual
+- 역할:
+  - reference image의 appearance/material 단서를 현재 생성 흐름에 주입
+
+`3) multiview attn (attn_multiview)`
+
+- 입력:
+  - 여러 view를 한 축으로 펼친 hidden state
+  - 필요 시 `position_voxel_indices`
+- 출력:
+  - view 간 정보가 섞인 hidden state residual
+- 역할:
+  - 앞/옆/뒤 view 사이 일관성 유지
+
+`4) cross attn (attn2)`
+
+- 입력:
+  - hidden state
+  - `encoder_hidden_states`
+  - 여기엔 learned PBR token이 들어감
+- 출력:
+  - 조건 반영된 hidden state residual
+- 역할:
+  - PBR type에 맞는 conditional generation
+
+`5) dino attn (attn_dino)`
+
+- 입력:
+  - hidden state
+  - projected DINO hidden states
+- 출력:
+  - DINO feature가 반영된 residual
+- 역할:
+  - reference image의 semantic/appearance prior를 더 강하게 주입
+
+`6) FFN`
+
+- 입력:
+  - 위 과정을 거친 hidden state
+- 출력:
+  - 최종 block output
+- 역할:
+  - transformer block의 표준 feed-forward refinement
+
+즉 네 이해대로:
+
+- self-attn은 material-aware self-attn으로 치환
+- ref/mv/dino attention이 추가
+- 대부분 residual add로 누적
+
+입니다.
+
+
+6. DinoAttn은 뭐야? 역할이 뭐야? reference image에서 DINO hidden state 추출한다는데, DINO hidden state 가 뭐야 이거 안쓰면 DinoAttn도 안써?
+
+답:
+
+네. `DinoAttn`은 DINOv2 feature를 cross-attention 형태로 주입하는 추가 attention branch입니다.
+
+현재 코드에서:
+
+- `self.use_dino=True`면 DINOv2를 로드
+- reference image에서 hidden states 추출
+- `image_proj_model_dino`로 cross-attn 차원에 맞게 projection
+- 각 block에서 `attn_dino` 수행
+
+합니다.
+
+역할은:
+
+- CLIP text token만으로는 부족한 reference image의 semantic feature 보강
+- texture/material 관련 시각적 prior 보강
+
+입니다.
+
+그리고 맞습니다.
+
+- `use_dino=False`면 DINO hidden state도 안 만들고
+- `attn_dino` 경로도 사실상 사용하지 않습니다
+
+
+7. 텐서 어떻게 변환되는지 흐름 그림으로 설명해줘(input -> VAE -> UNET(attention 별로) )
+
+답:
+
+코드 기준으로 단순화하면 아래 흐름입니다.
+
+```text
+[reference image]
+  -> PIL
+  -> VAE encode(ref_latents)                  : B x N_ref x C x H x W
+  -> DINOv2(hidden states)                   : B x L_dino x C_dino
+
+[normal maps for N views]
+  -> PIL list
+  -> VAE encode(normal_embeds)               : B x N_view x C x H x W
+
+[position maps for N views]
+  -> PIL list
+  -> VAE encode(position_embeds)             : B x N_view x C x H x W
+  -> voxel index 계산(position_voxel_indices)
+
+[target noisy latent]
+  -> B x N_pbr x N_view x C x H x W
+
+----------------------------------------------
+
+UNet 입력 조립:
+
+sample
+  = [noisy_latent
+     | normal_embeds(repeated over N_pbr)
+     | position_embeds(repeated over N_pbr)]
+
+  -> concat on channel
+  -> reshape to (B*N_pbr*N_view) x C_total x H x W
+
+encoder_hidden_states
+  -> learned_text_clip_albedo / learned_text_clip_mr
+  -> B x N_pbr x 77 x 1024
+  -> repeat over N_view
+
+----------------------------------------------
+
+각 transformer block:
+
+norm
+-> attn1(material-aware self attn)
+-> + attn_refview(reference cache)
+-> + attn_multiview(view tokens + position index)
+-> + attn2(cross attn to learned PBR tokens)
+-> + attn_dino(projected DINO hidden states)
+-> FFN
+
+----------------------------------------------
+
+출력 latent
+  -> reshape to [B, N_pbr, N_view, C, H, W]
+  -> VAE decode
+  -> first half = albedo views
+  -> second half = mr views
+```
+
+>> 텐서가 각 transformer 블록 안에서 어떻게 변하는지 더 정확히 설명해줘
+
+답:
+
+하나의 transformer block 안에서 기준 shape를 잡고 보면 이해가 쉽습니다.
+
+입력 hidden state를 먼저:
+
+```text
+(B * N_pbr * N_view) x L x C
+```
+
+라고 두겠습니다.
+
+여기서:
+
+- `B`: batch
+- `N_pbr`: albedo, mr
+- `N_view`: view 개수
+- `L`: spatial token 수
+- `C`: feature dim
+
+입니다.
+
+블록 내부 흐름은 대략 이렇습니다.
+
+`1) norm`
+
+```text
+h0: (B*N_pbr*N_view) x L x C
+-> norm_hidden_states
+```
+
+shape는 그대로입니다.
+
+`2) material-aware self attn (attn1)`
+
+코드에서 먼저:
+
+```text
+(B*N_pbr*N_view) x L x C
+-> B x N_pbr x N_view x L x C
+```
+
+로 다시 묶습니다.
+
+이 상태로 `attn1`에 넣고, 출력도 같은 구조로 받은 뒤 다시:
+
+```text
+-> (B*N_pbr*N_view) x L x C
+```
+
+로 펴서 residual add 합니다.
+
+즉:
+
+```text
+h1 = h0 + Attn1(h0 grouped as B x N_pbr x N_view x L x C)
+```
+
+`3) reference attn (attn_refview)`
+
+여기서는 `norm_hidden_states`를:
+
+```text
+(B*N_pbr*N_view) x L x C
+-> B x N_pbr x (N_view*L) x C
+```
+
+로 보고, 그중 `[:, 0, ...]` 즉 albedo branch만 꺼냅니다.
+
+그래서 RefAttn query는 대략:
+
+```text
+B x (N_view*L) x C
+```
+
+입니다.
+
+reference branch에서 미리 만든 `condition_embed_dict[layer_name]`도:
+
+```text
+B x (N_ref*L) x C
+```
+
+형태입니다.
+
+RefAttn 결과는 다시:
+
+```text
+-> (B*N_pbr*N_view) x L x C
+```
+
+로 reshape되어 전체 hidden state에 더해집니다.
+
+즉:
+
+```text
+h2 = h1 + RefAttn(albedo_query, ref_condition)
+```
+
+`4) multiview attn (attn_multiview)`
+
+여기서는 view들을 한 줄로 펴서:
+
+```text
+(B*N_pbr*N_view) x L x C
+-> (B*N_pbr) x (N_view*L) x C
+```
+
+형태로 만듭니다.
+
+즉 "같은 PBR 안에서 여러 view token들을 한 시퀀스로 연결"한 다음 attention합니다.
+
+출력은 다시:
+
+```text
+-> (B*N_pbr*N_view) x L x C
+```
+
+로 돌아와 hidden state에 더해집니다.
+
+즉:
+
+```text
+h3 = h2 + MVAttn(view-concatenated tokens)
+```
+
+>>> 이건 내 개념 이해가 부족한 거 같은데, (B*N_pbr*N_view) x L x C랑 (B*N_pbr) x (N_view*L) x C, B x (N_ref*L) x C의 차이를 모르겠어 어떻게 묶냐에 따라 attention을 할 때 차이가 생기나?
+
+답:
+
+네. **어떻게 reshape해서 묶느냐에 따라 attention이 "누구와 누구를 볼 수 있는지"가 달라집니다.**  
+이게 핵심입니다.
+
+각 shape의 의미를 분리해서 보면:
+
+`1) (B*N_pbr*N_view) x L x C`
+
+이건 "한 view씩 독립 sample처럼" 보는 형태입니다.
+
+의미:
+
+- 한 번의 attention이 기본적으로 `한 view 내부의 L개 token`만 봄
+- 다른 view token은 같은 attention 안에서 직접 안 봄
+
+즉:
+
+```text
+view별로 따로따로 attention
+```
+
+에 가깝습니다.
+
+`2) (B*N_pbr) x (N_view*L) x C`
+
+이건 같은 PBR 안의 여러 view token을 한 시퀀스로 이어붙인 형태입니다.
+
+의미:
+
+- 한 sample 안에 `view1의 L개 token + view2의 L개 token + ...`
+  가 같이 들어감
+- 그래서 attention이 view를 넘어 토큰을 볼 수 있음
+
+즉:
+
+```text
+여러 view 사이 attention 가능
+```
+
+이 shape가 바로 multiview attention에 적합합니다.
+
+`3) B x (N_ref*L) x C`
+
+이건 reference branch에서 나온 여러 reference image token을 한 시퀀스로 묶은 것입니다.
+
+의미:
+
+- generation 쪽 query가 reference 쪽 token memory를 읽을 수 있음
+- 즉 현재 생성 중인 hidden state가 "reference에서 추출된 token bank"를 보는 구조
+
+즉:
+
+```text
+generation tokens -> reference tokens로 attention
+```
+
+입니다.
+
+그래서 "reshape를 다르게 하면 왜 다르냐"에 대한 답은:
+
+```text
+attention은 같은 batch 안의 sequence 차원에 있는 token끼리만 직접 상호작용하기 때문
+```
+
+입니다.
+
+예를 들어:
+
+- `(B*N_pbr*N_view) x L x C`
+  - 한 view 내부 토큰끼리만 self-attention
+- `(B*N_pbr) x (N_view*L) x C`
+  - 여러 view 토큰끼리 self-attention
+- `B x (N_ref*L) x C`
+  - reference token memory를 만들기 위한 구조
+
+입니다.
+
+한 줄 요약:
+
+```text
+reshape는 단순 모양 바꾸기가 아니라, attention이 허용하는 상호작용 범위를 바꾸는 작업이다.
+```
+
+`5) cross attn (attn2)`
+
+이때 hidden state는 여전히:
+
+```text
+(B*N_pbr*N_view) x L x C
+```
+
+이고, 여기에 대응하는 `encoder_hidden_states`는 learned PBR token을 view별로 repeat한 것입니다.
+
+대략:
+
+```text
+encoder_hidden_states_gen:
+(B*N_pbr*N_view) x 77 x 1024
+```
+>>> 여기서 77 x 1024는 텍스트 임베딩인가?
+
+답:
+
+네. 정확히는 **text encoder가 기대하는 형태를 맞춘 learned text-like embedding**입니다.
+
+현재 코드의:
 
 - `learned_text_clip_albedo`
 - `learned_text_clip_mr`
 - `learned_text_clip_ref`
 
-를 등록한다.
+는 shape가 `77 x 1024`입니다.
 
-shape은:
+이 의미는:
 
-- `77 x 1024`
+- `77`: Stable Diffusion/CLIP text token length
+- `1024`: text embedding dim
 
-이다.
+입니다.
 
-즉 SD/CLIP text token 길이에 맞춘 learned embedding으로 보는 편이 맞다.
+즉 자연어 문장을 tokenizer에 넣어 얻은 embedding은 아니지만,  
+UNet 입장에서는 거의 **텍스트 임베딩처럼 쓰는 학습 가능한 token sequence**입니다.
 
-이 learned token들은 일반 문장 prompt 대신 PBR type별 conditioning 역할을 한다.
+그래서 답을 정확히 하면:
 
----
+- `완전한 자연어 텍스트 임베딩`은 아니고
+- `text embedding 자리에 들어가는 learned conditioning token`입니다
 
-## 9. DINO conditioning
+라고 하면 가장 정확합니다.
 
-현재 구현은 DINOv2 feature도 사용한다.
+이게 cross-attention의 key/value 역할을 합니다.
 
-관련 코드:
+출력은 다시 같은 shape:
 
-- [materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py)
-- [materialmvp/model.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/model.py)
+```text
+h4 = h3 + CrossAttn(h3, encoder_hidden_states_gen)
+```
+
+`6) dino attn (attn_dino)`
+
+DINO hidden states는 먼저 projection을 거쳐:
+
+```text
+B x L_dino' x C
+```
+>>> 그러면 (B*N_pbr*N_view) x L x C가 프로젝션을 거쳐 B x L_dino' x C가 되는거야? 원래 뭐였는데 프로젝션을 거쳐서 저게 되는건데?
+
+답:
+
+아니요. 그건 다른 텐서입니다.
+
+프로젝션되는 건 `(B*N_pbr*N_view) x L x C` hidden state가 아니라,  
+**DINO에서 나온 feature**입니다.
+
+흐름을 정확히 쓰면:
+
+`1) reference image -> DINOv2`
+
+먼저 reference image를 DINOv2에 넣어서 raw feature를 얻습니다.
+
+대략:
+
+```text
+B x L_dino x 1536
+```
+
+입니다.
+
+여기서:
+
+- `L_dino`: DINO token 개수
+- `1536`: DINO feature dim
+
+입니다.
+
+`2) DINO feature -> projection`
+
+그 다음 `image_proj_model_dino`가 이걸:
+
+```text
+B x L_dino x 1536
+-> B x L_dino' x 1024
+```
+
+로 바꿉니다.
+
+즉 projection은:
+
+- DINO feature dim `1536`
+- UNet cross-attention dim `1024`
+
+를 맞추기 위한 과정입니다.
+
+`3) 그 다음 repeat`
+
+projection된 DINO token을:
+
+```text
+B x L_dino' x 1024
+-> (B*N_pbr*N_view) x L_dino' x 1024
+```
+
+형태로 repeat해서 각 생성 branch가 볼 수 있게 만듭니다.
+
+그리고 이걸 `attn_dino`의 key/value로 씁니다.
+
+반면 생성 쪽 hidden state는 계속:
+
+```text
+(B*N_pbr*N_view) x L x C
+```
+
+형태로 유지됩니다.
+
+즉 네가 쓴 두 텐서는 같은 텐서가 아닙니다.
+
+- `(B*N_pbr*N_view) x L x C`
+  - 생성 UNet의 hidden state
+- `B x L_dino' x C`
+  - reference image에서 나온 DINO feature를 projection한 것
+
+입니다.
+
+가 되고, 이후 `N_pbr * N_view`만큼 반복돼:
+
+```text
+(B*N_pbr*N_view) x L_dino' x C
+```
+
+형태가 됩니다.
+
+그리고 hidden state와 cross-attention해서:
+
+```text
+h5 = h4 + DinoAttn(h4, dino_hidden_states_proj)
+```
+
+가 됩니다.
+>>>>그럼 dinoAttn이랑 reference attn 차이가 뭐야?
+
+답:
+
+둘 다 "reference image에서 온 정보"를 generation hidden state에 넣는다는 점은 같지만,  
+**무엇을 source로 쓰는지와 어떤 정보를 넣는지가 다릅니다.**
+
+가장 짧게 구분하면:
+
+- `reference attn`
+  - reference image를 **UNet reference branch로 흘려서 얻은 layer-wise feature memory**를 읽음
+- `dinoAttn`
+  - reference image를 **DINOv2로 인코딩한 semantic feature token**을 읽음
+
+즉 source가 다릅니다.
+
+`1) reference attn`
+
+source:
+
+- `ref_latents`
+- `unet_dual` 또는 `unet`
+- `condition_embed_dict[layer_name]`
 
 흐름:
 
-1. reference image에서 DINO hidden state 추출
-2. `image_proj_model_dino`로 cross-attention 차원에 맞게 projection
-3. transformer block의 `attn_dino`를 통해 hidden state에 residual add
+1. reference image를 VAE latent로 바꿈
+2. reference branch UNet에 넣음
+3. 각 layer에서 feature를 `condition_embed_dict[layer_name]`에 저장
+4. generation branch의 같은 layer가 그걸 읽음
 
-즉 DINO는 단순 feature concatenation이 아니라 **추가 cross-attention branch**다.
-
----
-
-## 10. Position-aware multi-view alignment
-
-멀티뷰 attention이 단순히 모든 view 토큰을 다 섞는 것은 아니다.
-
-현재 구현은 `position map`을 바탕으로 다중 해상도의 voxel index를 만들고,  
-이를 통해 view 간 비슷한 3D 위치가 서로 attention되도록 유도한다.
-
-관련 코드:
-
-- `calc_multires_voxel_idxs`
-- `compute_discrete_voxel_indice`
-- `PoseRoPEAttnProcessor2_0`
-
-즉 "2D 이미지 여러 장을 같이 돌리는 것"보다, **3D position 정보를 쓴 2.5D 정렬 attention**에 가깝다.
-
----
-
-## 11. Consistency-Regularized Training: 현재 코드 기준
-
-핵심 파일:
-
-- [materialmvp/model.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/model.py)
-- [src/data/dataloader/objaverse_loader_forTexturePBR.py](/home/diglab/workspace/projects/MaterialMVP/src/data/dataloader/objaverse_loader_forTexturePBR.py)
-
-현재 데이터셋 로더는 각 object에 대해:
-
-- 서로 다른 lighting 조건의 reference image 2장
-- multi-view albedo
-- multi-view mr
-- multi-view normal
-- multi-view position
-
-을 읽는다.
-
-학습 시:
-
-1. reference A로 예측
-2. reference B로 같은 target material을 다시 예측
-3. 두 prediction끼리도 가깝게 만듦
-
-현재 코드 손실은 대략:
-
-- `albedo_loss`
-- `mr_loss`
-- `consistency_loss`
-
-최종:
+즉 reference attn은:
 
 ```text
-0.85 * (albedo_loss + mr_loss) + 0.15 * consistency_loss
+"현재 UNet layer와 같은 표현 공간"의 reference feature memory
 ```
 
-즉 문서에 예전처럼 `lambda = 0.1`이라고 고정해서 적는 건 현재 코드 기준으로 정확하지 않다.  
-현재 구현상 최종 결합 비율은 `0.15`가 consistency 쪽에 걸려 있다.
+를 읽는 구조입니다.
 
----
+역할:
 
-## 12. 추론 시 실제 생성 흐름
+- reference image의 appearance/material 단서를 layer-by-layer로 전달
+- 현재 생성 중인 representation과 더 직접적으로 맞물리는 conditioning
 
-현재 추론에서 일어나는 일:
+특징:
 
-1. 입력 reference image를 `512 x 512`로 정리
-2. 선택된 각 view의 normal / position map 생성
-3. diffusion pipeline이 모든 view의 `albedo`, `mr`를 한 번에 생성
-4. 결과를 `{"albedo": ..., "mr": ...}`로 분리
-5. Real-ESRGAN으로 해상도 향상
-6. back-project 후 UV texture bake
-7. inpaint 후 저장
+- layer-specific
+- UNet 내부 feature 기반
+- albedo branch 중심으로 사용
 
-관련 코드:
+`2) dinoAttn`
 
-- [utils/multiview_utils.py](/home/diglab/workspace/projects/MaterialMVP/utils/multiview_utils.py)
-- [textureGenPipeline.py](/home/diglab/workspace/projects/MaterialMVP/textureGenPipeline.py)
+source:
 
----
+- reference image
+- DINOv2 encoder
+- `image_proj_model_dino`
 
-## 13. Geometry를 새로 생성하나
+흐름:
 
-아니다. 현재 시스템은 **geometry generation 모델이 아니라 material / texture generation 모델**이다.
+1. reference image를 DINOv2로 인코딩
+2. high-level token feature를 얻음
+3. cross-attn 차원으로 projection
+4. 각 block에서 hidden state가 이 token들을 읽음
 
-즉 diffusion이 새 triangle을 만들어내지는 않는다.
-
-정확히는:
-
-- 바뀌는 것: texture, material map
-- 유지되는 것: mesh surface geometry
-
-단, 전처리에서 remesh를 켜면 triangle 배치는 바뀔 수 있다.  
-현재 기본값은 `use_remesh=False`이므로, 기본 추론 경로에서는 원본 geometry를 유지한다.
-
----
-
-## 14. 우리 프로젝트 관점에서 중요 포인트
-
-치아/의료 쪽에서 특히 볼 만한 구현 포인트:
-
-1. reference perturbation에 강한 consistency regularization
-2. appearance(`albedo`)와 material(`mr`)을 분리하되 shared backbone으로 묶는 구조
-3. position map 기반 multi-view alignment
-4. geometry는 유지하고 material만 생성하는 파이프라인
-
----
-
-## 15. 짧은 정리
-
-현재 코드 기준 MaterialMVP는:
-
-- `Stable Diffusion 2.1` 기반
-- input channel 확장(`noise + normal + position`)
-- `material-aware self-attn + ref attn + multi-view attn + text attn + dino attn`
-- learned PBR tokens(`77 x 1024`)
-- DINO conditioning
-- position-aware multi-view alignment
-- consistency-regularized training
-- 최종적으로 `albedo`와 `mr` multi-view를 생성 후 UV bake
-
-로 이해하는 게 가장 정확하다.
-
----
-
-## 16. `bake_view_selection()`은 어떻게 "잘 칠할 수 있는 view"를 고르나
-
-핵심 함수:
-
-- [utils/pipeline_utils.py](/home/diglab/workspace/projects/MaterialMVP/utils/pipeline_utils.py)
-  - `bake_view_selection()`
-
-이 함수는 "이미지 품질이 좋아 보이는 view"를 고르는 것이 아니라,  
-**현재 mesh 표면을 얼마나 많이, 얼마나 새롭게 덮을 수 있는지**를 기준으로 view를 고른다.
-
-### 16.1 입력 후보
-
-후보 view는 config에 미리 들어 있다.
-
-- 정면/측면/상하면에 해당하는 6개 기본 view
-- 추가로 elevation `+20`, `-20`에서 30도 간격 azimuth view들
-
-즉 후보 view 집합은 고정되어 있고, 그중 일부를 선택하는 구조다.
-
-### 16.2 각 후보 view에서 무엇을 계산하나
-
-각 후보 카메라 `(elev, azim)`에 대해:
-
-1. `render_alpha()`를 돌린다
-2. 이때 각 픽셀이 어떤 triangle을 보고 있는지 얻는다
-3. `np.unique()`로 그 view에서 보이는 triangle index 집합을 만든다
-
-즉 각 후보 view는 결국 아래 정보로 요약된다.
+즉 dinoAttn은:
 
 ```text
-이 view에서 실제로 관측 가능한 triangle들의 집합
+"UNet 내부 feature"가 아니라
+"별도 비전 인코더가 만든 semantic token"
 ```
 
-### 16.3 왜 triangle "개수"가 아니라 "면적 비율"을 보나
+을 읽는 구조입니다.
 
-함수는 먼저 mesh 전체의 각 triangle area를 구한다.
+역할:
+
+- semantic prior 제공
+- reference 이미지의 고수준 시각 특징 보강
+- CLIP/learned token만으로 부족한 visual cue 보완
+
+특징:
+
+- layer-specific cache가 아님
+- 외부 vision encoder feature 기반
+- semantic / visual prior 쪽 성격이 강함
+
+차이를 표처럼 정리하면:
 
 ```text
-face_areas -> total_area -> face_area_ratios
+Reference Attn:
+  source = reference branch UNet feature
+  granularity = layer-wise cached feature
+  role = appearance/material 단서 직접 주입
+
+Dino Attn:
+  source = DINOv2 feature token
+  granularity = external semantic token
+  role = semantic / visual prior 보강
 ```
 
-이렇게 하면 아주 작은 triangle을 수백 개 더 보는 것보다,  
-실제 표면 면적을 많이 덮는 view가 더 유리해진다.
+조금 더 직관적으로 말하면:
 
-즉 selection 기준은 대략:
+- `reference attn`은 "reference 이미지를 현재 UNet과 비슷한 표현공간으로 변환해서 읽는 것"
+- `dinoAttn`은 "reference 이미지를 별도 비전 모델의 의미 feature로 읽는 것"
+
+입니다.
+
+즉 둘은 중복이라기보다 보완 관계에 가깝습니다.
+
+`7) FFN`
+
+마지막으로:
 
 ```text
-새로 커버하는 triangle들의 면적 합
+h6 = h5 + FFN(norm(h5))
 ```
 
-이다.
+가 block 출력입니다.
 
-### 16.4 선택 절차
-
-선택은 greedy 방식이다.
-
-1. 처음 6개 canonical view는 무조건 넣는다
-2. 그 뒤 남은 후보들에 대해
-   - 아직 선택되지 않은 후보를 하나씩 검사
-   - 그 후보가 추가로 보여주는 triangle 집합을 계산
-   - 그 triangle들의 면적 증가량을 계산
-3. 증가 면적이 가장 큰 후보를 하나 추가한다
-4. 새로 얻는 면적이 너무 작아지면 중단한다
-
-코드 기준 중단 조건은:
+한 줄 요약:
 
 ```text
-max_inc_area <= 0.01
+(B*N_pbr*N_view) x L x C
+<-> 필요할 때만 B x N_pbr x N_view x L x C 또는 (B*N_pbr) x (N_view*L) x C 로 reshape
+-> attention
+-> 다시 (B*N_pbr*N_view) x L x C 로 복원
+-> residual add
 ```
 
-즉 추가 view가 mesh 표면을 거의 새롭게 덮지 못하면 굳이 생성하지 않는다.
+8. reference image에서 DINO hidden state 추출한다는데, DINO hidden state 가 뭐야
 
-### 16.5 왜 이게 texture bake에 유리한가
+답:
 
-이 selection의 목적은 "서로 다른 그림 6장 만들기"가 아니라,  
-**UV texture를 채우는 데 도움이 되는 view set**을 만드는 것이다.
+`DINO hidden state`는 DINOv2 transformer가 reference image를 인코딩한 뒤 내부에서 내놓는 token feature입니다.
 
-좋은 bake view는 보통:
+쉽게 말해:
 
-- 이미 다른 view가 덮은 부분을 중복해서 보기보다
-- 아직 안 보인 triangle을 새롭게 드러내고
-- 표면 대부분을 고르게 커버해야 한다
+- RGB 이미지를 바로 쓰는 게 아니라
+- DINOv2가 이미지 내용을 고차원 feature token들로 바꾼 것
 
-`bake_view_selection()`은 바로 이 관점으로 view를 고른다.
+입니다.
 
-즉 "mesh를 잘 칠할 수 있는 view"라는 말은 정확히는:
+이 token들은 보통:
+
+- 물체 형상
+- 영역별 시각 패턴
+- semantic 구조
+
+같은 정보를 압축해서 담고 있습니다.
+
+현재 코드의 `Dino_v2.forward()`는 DINOv2의 출력 `[0]`을 받아서:
+
+- `(b*n) x l x c`
+  형태를
+- `b x (n*l) x c`
+
+형태로 다시 정리합니다.
+
+즉 DINO hidden state는 "reference image를 보고 얻은 토큰 시퀀스 feature"라고 이해하면 됩니다.
+
+>> DINO로 나온 feature의 텐서 차원은 어떻게돼?
+
+답:
+
+코드 기준으로 단계별로 다릅니다.
+
+`1) DINOv2 raw output`
+
+[materialmvp/modules.py](/home/diglab/workspace/projects/MaterialMVP/materialmvp/modules.py)의 `Dino_v2.forward()`에서 DINOv2의 출력 `[0]`을 받습니다.
+
+입력 image가 tensor일 때 중간 shape는 대략:
 
 ```text
-UV baking 단계에서 새로운 표면 영역을 더 많이 제공하는 view
+(B*N_ref) x L_dino x C_dino
 ```
 
-를 우선한다는 뜻이다.
+입니다.
 
----
+여기서 보통:
 
-## 17. Mesh-aware baking은 정확히 어떻게 동작하나
+- `C_dino = 1536`
 
-핵심 함수:
+입니다. 코드에서도 `ImageProjModel(... clip_embeddings_dim=1536)`로 맞춰 둡니다.
 
-- [utils/pipeline_utils.py](/home/diglab/workspace/projects/MaterialMVP/utils/pipeline_utils.py)
-  - `bake_from_multiview()`
-- [DifferentiableRenderer/MeshRender.py](/home/diglab/workspace/projects/MaterialMVP/DifferentiableRenderer/MeshRender.py)
-  - `back_project()`
-  - `fast_bake_texture()`
-
-핵심 아이디어는 단순하다.
+그 다음 `rearrange`로:
 
 ```text
-생성된 view 이미지를 그냥 UV에 붙이는 게 아니라,
-실제 mesh의 visibility / normal / depth / UV 대응을 이용해
-"이 픽셀이 mesh의 어느 UV texel에 해당하는가"를 계산해서 역투영한다.
+(B*N_ref) x L_dino x 1536
+-> B x (N_ref * L_dino) x 1536
 ```
 
-### 17.1 `back_project()`의 입력
+가 됩니다.
 
-각 view 이미지와 그 view의 카메라 파라미터 `(elev, azim)`를 받는다.
-
-즉 이 함수는:
-
-- 생성된 2D view image
-- 그 이미지가 어떤 카메라에서 본 것인지
-- 현재 mesh의 vertex / face / UV
-
-를 모두 알고 있다.
-
-그래서 이미지 픽셀을 무작정 texture space에 복사하는 게 아니라,  
-**카메라-메쉬-UV 관계를 통해 정합된 역투영**을 수행할 수 있다.
-
-### 17.2 우선 현재 view에서 실제로 보이는 표면만 찾는다
-
-`back_project()` 내부에서는 현재 카메라에서 mesh를 rasterize해서:
-
-- `visible_mask`
-- per-pixel normal
-- per-pixel depth
-- per-pixel UV
-
-를 얻는다.
-
-즉 view image의 각 픽셀이 실제 mesh 어느 점을 보고 있는지 다시 계산한다.
-
-이 단계가 중요한 이유는:
-
-- 생성 이미지의 픽셀 중 background는 버리고
-- self-occlusion으로 가려진 표면은 제외하고
-- 실제 관측 가능한 surface만 texture 후보로 쓰기 때문이다
-
-### 17.3 정면을 보는 픽셀에 더 큰 weight를 준다
-
-`cos_image`는 시선 방향과 surface normal의 cosine similarity다.
-
-대략:
+추론에서는 보통 reference image 1장이라:
 
 ```text
-cos = dot(view_direction, surface_normal)
+B x L_dino x 1536
 ```
 
-의 역할을 한다.
+처럼 보면 됩니다.
 
-의미:
+`2) projection 후`
 
-- 카메라를 정면으로 보는 surface
-  - `cos`가 큼
-  - 투영 왜곡이 적음
-  - 신뢰도 높음
-- 비스듬한 surface
-  - `cos`가 작음
-  - 투영 왜곡, seam, stretch가 커짐
-  - 신뢰도 낮음
+그 다음 `image_proj_model_dino`를 통과하면 cross-attention 차원에 맞게 바뀝니다.
 
-코드에서는 threshold 아래는 0으로 잘라낸다.
+이 모델은:
 
-즉 너무 사선인 표면은 아예 bake weight를 주지 않는다.
+- 입력: `1536`
+- 출력: `4 * cross_attention_dim`
 
-### 17.4 경계(boundary)와 불안정 영역을 줄인다
+구조이고, 기본 cross attention dim은 `1024`입니다.
 
-코드는 depth 기반 `sketch_image`를 만들고,  
-여기에 작은 convolution 커널을 써서 경계 근처 visible region을 더 줄인다.
-
-목적은:
-
-- 실루엣 근처
-- depth discontinuity 근처
-- rasterization 경계 근처
-
-같은 불안정한 부분을 bake에서 덜 믿도록 하는 것이다.
-
-즉 단순 visible 여부만 보는 것이 아니라,  
-**보이기는 하지만 경계라서 믿기 어려운 픽셀**도 제거한다.
-
-### 17.5 실제 UV texel에 어떻게 넣나
-
-현재 기본 bake mode는 `back_sample`이다.
-
-이 모드에서는 UV space의 각 texel이 들고 있는 3D 위치 `self.tex_position`을 다시 현재 카메라로 투영한다.
-
-개념적으로:
+그래서 projection 후에는 대략:
 
 ```text
-UV texel
- -> 그 texel이 대표하는 mesh 상의 3D 위치
- -> 현재 카메라 이미지 좌표로 projection
- -> 해당 위치에서 RGB를 bilinear sample
+B x L_dino' x 1024
 ```
 
-즉 "image pixel -> UV"가 아니라,
+가 됩니다.
+
+여기서 `L_dino'`는 원래 DINO token 수에 `clip_extra_context_tokens=4`가 반영된 길이입니다.
+
+`3) attention 직전`
+
+block 안에서는 이걸 다시 `N_pbr * N_view`만큼 repeat해서:
 
 ```text
-UV texel -> camera image
+(B*N_pbr*N_view) x L_dino' x 1024
 ```
 
-방향으로 샘플링하는 셈이다.
+형태로 `attn_dino`에 넣습니다.
 
-이 방식이 중요한 이유는 UV texture space 기준으로 직접 값을 채우기 때문에:
+9. position map`을 바탕으로 다중 해상도의 voxel index를 만들고, 이를 통해 view 간 비슷한 3D 위치가 서로 attention되도록 유도한다고 했는데 이게 무슨소리야? 정확히 설명해줘
 
-- 각 texel이 정확히 어떤 view image에서 어떤 픽셀을 읽어야 하는지 정해지고
-- occlusion/depth check도 함께 가능하고
-- mesh geometry와 맞지 않는 픽셀 오염을 줄일 수 있다
+답:
 
-### 17.6 depth check는 왜 필요하나
+핵심은 "각 view의 픽셀들이 사실 3D 표면의 어떤 위치를 보고 있는지"를 이용해서, 서로 다른 view의 대응점을 찾는다는 뜻입니다.
 
-UV texel이 2D image 안에 투영되더라도,  
-그 image pixel이 실제로 같은 표면을 보고 있는지는 depth를 비교해 확인해야 한다.
+position map의 각 픽셀은 대략:
 
-코드는:
+```text
+이 픽셀이 보고 있는 3D 위치 (x, y, z)
+```
 
-- projected texel depth `v_z`
-- image rasterization으로 얻은 sampled depth `sampled_z`
+를 담고 있습니다.
 
-를 비교해서, 차이가 작은 경우만 valid로 인정한다.
+현재 코드는 이 3D 위치를 바로 쓰지 않고, 여러 해상도의 voxel grid로 양자화합니다.
+
+절차는:
+
+1. position map을 작은 grid block으로 나눔
+2. 각 block 안의 평균 3D 위치를 계산
+3. 그 위치를 voxel index로 양자화
+4. 여러 view에서 voxel index가 비슷한 token들은 "같은 표면 부근"이라고 간주
 
 즉:
 
-```text
-같은 화면 위치에 투영되더라도,
-실제로는 다른 가려진 표면이면 버린다
-```
+- front view의 어떤 패치
+- side view의 어떤 패치
 
-이게 mesh-aware baking이 단순 projection보다 정확한 핵심 이유 중 하나다.
+가 2D 좌표는 달라도, 3D 위치가 비슷하면 attention에서 서로 더 잘 연결됩니다.
 
-### 17.7 여러 view를 어떻게 합치나
+이게 필요한 이유는 단순 multiview attention만 쓰면:
 
-`bake_from_multiview()`는 각 view마다:
+- 앞면의 한 점과 옆면의 전혀 다른 점이 섞일 수 있기 때문입니다
 
-1. `back_project()`로 UV texture 후보 생성
-2. cosine map에 view weight와 exponent를 적용
-3. `fast_bake_texture()`로 merge
-
-를 수행한다.
-
-여기서 실제 weight는 대략:
+position-aware alignment를 쓰면:
 
 ```text
-weight = candidate_view_weight * (cos_map ^ bake_exp)
+2D로는 멀지만 3D로는 같은 표면 위치
 ```
 
-이다.
+를 더 잘 매칭할 수 있습니다.
 
-즉:
+즉 "비슷한 3D 위치끼리 attention"이란 말은:
 
-- 기본적으로 중요한 canonical view는 더 큰 prior weight를 가질 수 있고
-- 그 안에서도 정면에 가까운 texel이 더 강하게 반영된다
+- 서로 다른 카메라 view에서도
+- 실제 mesh 상 같은 위치를 보는 token들을
+- 더 잘 대응시키도록 돕는다는 뜻입니다
 
-### 17.8 `fast_bake_texture()`는 무슨 merge인가
+>> 복셀 계산은 실제 mesh써서 해?
 
-이 함수는 UV texture 후보들을 weighted average로 합친다.
+답:
 
-대략:
+직접적으로는 "mesh vertex/face를 바로 읽어서" 계산하는 게 아니라,  
+**mesh를 렌더링해서 얻은 position map을 기반으로 계산**합니다.
+
+즉 흐름은:
 
 ```text
-texture_merge += texture * cos_weight
-trust_map += cos_weight
-final = texture_merge / trust_map
+mesh
+-> renderer가 각 view의 position map 생성
+-> position map의 각 픽셀에 3D 위치값 저장
+-> 그 값을 grid/voxel로 양자화
 ```
 
-추가로 이미 거의 다 칠해진 view는 skip한다.
+입니다.
 
-코드상:
+그래서 근본적으로는 실제 mesh geometry에서 나온 정보가 맞습니다.  
+다만 voxel 계산 함수가 직접 mesh vertex를 순회하는 건 아니고,  
+이미 렌더된 `position map` 위에서 계산합니다.
 
-```text
-if painted_sum / view_sum > 0.99: continue
-```
+즉 답을 정확히 하면:
 
-즉 어떤 view가 새롭게 기여하는 texel이 거의 없으면 merge 비용을 아낀다.
+- `예, 결국 실제 mesh 기반 정보다`
+- `하지만 직접 mesh를 쓰는 게 아니라 mesh에서 렌더된 position map을 쓴다`
 
-정리하면 mesh-aware baking의 핵심은:
+입니다.
 
-1. mesh를 알고 있는 상태에서
-2. visibility / depth / normal / UV를 함께 써서
-3. 신뢰도 높은 view만 반영하고
-4. UV space에서 직접 weighted merge
+10. Consistency-Regularized Training을 통해 두 reference image를 가깝게 만들었다는데, 그러면 inference할 때에는 한 이미지만 사용하는거지?
 
-한다는 점이다.
+답:
 
----
+네. inference 때는 한 이미지만 씁니다.
 
-## 18. `uv_inpaint()`는 정확히 어떻게 동작하나
+학습 때만:
 
-핵심 함수:
+- reference A
+- reference B
 
-- [utils/pipeline_utils.py](/home/diglab/workspace/projects/MaterialMVP/utils/pipeline_utils.py)
-  - `texture_inpaint()`
-- [DifferentiableRenderer/MeshRender.py](/home/diglab/workspace/projects/MaterialMVP/DifferentiableRenderer/MeshRender.py)
-  - `uv_inpaint()`
+두 장을 써서 "조명이나 약간의 조건 변화가 있어도 결과 material은 비슷해야 한다"는 제약을 줍니다.
 
-베이킹이 끝나도 UV texture에는 보통 빈 영역이 남는다.
+하지만 추론에서는 [textureGenPipeline.py](/home/diglab/workspace/projects/MaterialMVP/textureGenPipeline.py) 기준으로 보통 reference image 1장을 받아서 생성합니다.
 
-이유:
+즉 consistency-regularized training은:
 
-- 어떤 texel은 어느 선택된 view에서도 보이지 않았거나
-- 사선이라서 weight가 0이 되었거나
-- depth/경계 체크에서 제거되었기 때문
+- 추론 입력을 두 장으로 만들기 위한 것이 아니라
+- 한 장만 들어와도 더 안정적으로 material을 뽑게 만들기 위한 학습 전략
 
-그래서 최종 texture는:
+입니다.
 
-- 채워진 영역
-- 비어 있는 영역
 
-을 함께 가진다. 이때 `mask`가 바로 "어디가 채워졌는가"를 나타내는 신뢰 맵이다.
+11. inpaint 할 때, mesh-aware vertex inpaint로 구조적인 빈칸을 먼저 줄이고, 2D inpaint로 남은 작은 hole을 마감한다고 하는데 정확히 어떻게 mesh-aware vertex inpaint가 구조적 빈칸 줄이고, 2D inpaint가 남은 작은 홀 마감하는지 정확한 원리 설명
 
-### 18.1 입력 mask는 무엇인가
+답:
 
-`bake_from_multiview()`는 `ori_trust_map > 1e-8`를 반환한다.
+현재 코드에서 이 부분은 두 단계입니다.
 
-즉 mask는 대략:
+`1) mesh-aware vertex inpaint`
 
-- `1`: 적어도 하나의 view가 유효하게 칠한 texel
-- `0`: 아직 아무 view도 신뢰 있게 칠하지 못한 texel
-
-이다.
-
-이 mask가 `texture_inpaint()`를 거쳐 `uv_inpaint()`로 들어간다.
-
-### 18.2 1단계: mesh vertex connectivity 기반 보간
-
-기본 옵션은 `vertex_inpaint=True`다.
-
-이때 `uv_inpaint()`는 먼저:
+[DifferentiableRenderer/MeshRender.py](/home/diglab/workspace/projects/MaterialMVP/DifferentiableRenderer/MeshRender.py)의 `uv_inpaint()`는 먼저:
 
 ```text
 meshVerticeInpaint(texture_np, mask, vtx_pos, vtx_uv, pos_idx, uv_idx)
 ```
 
-를 호출한다.
+를 호출합니다.
 
-이건 단순 2D 이미지 인페인팅 전에,  
-**mesh vertex와 triangle 연결 정보를 이용해 UV 빈 영역을 먼저 메워보는 단계**다.
+이 함수는 C++ 확장이라 내부 세부는 여기서 바로 안 보이지만, 입력을 보면 의도가 명확합니다.
 
-의미적으로는:
+입력:
 
-- 같은 mesh surface 위에서 인접한 texel들은 비슷한 값을 가질 가능성이 높고
-- triangle adjacency를 알면 seam/연결성을 무시한 2D 보정보다 더 surface-aware한 채움이 가능하다
+- 현재 UV texture
+- 채워진 영역 mask
+- vertex position
+- vertex uv
+- triangle topology
 
-즉 이 단계는:
+즉 단순 2D 이미지 보정이 아니라, mesh connectivity를 이용합니다.
+
+의미는:
+
+- UV 공간에서 떨어져 있어도 실제 mesh에서 이웃인 영역을 따라 값을 전파할 수 있고
+- triangle 연결성을 따라 빈칸을 줄일 수 있다는 것입니다
+
+그래서 이 단계는 특히:
+
+- seam 양옆이 실제론 같은 surface인 경우
+- UV가 끊겨 있어서 2D 이웃만으로는 연결이 안 되는 경우
+
+에 유리합니다.
+
+`2) 2D inpaint`
+
+그 뒤 남은 hole은 OpenCV `cv2.inpaint(..., cv2.INPAINT_NS)`로 메웁니다.
+
+이 단계는 mesh topology는 모르고, UV image 위에서만 동작합니다.
+
+원리는:
+
+- 이미 채워진 주변 픽셀의 색/구조를 따라
+- 빈 영역으로 부드럽게 연장
+
+하는 것입니다.
+
+즉 역할 분담은:
+
+- `mesh-aware vertex inpaint`
+  - mesh 연결성을 따라 큰 구조적 빈칸부터 줄임
+  - seam across propagation에 유리
+- `2D inpaint`
+  - 남은 작은 hole, 미세한 gap, 가장자리 틈을 시각적으로 마감
+
+입니다.
+
+한 줄 요약:
 
 ```text
-UV 이미지 한 장만 보고 메꾸는 게 아니라,
-mesh의 연결성을 힌트로 먼저 빈 영역을 줄이는 단계
+먼저 mesh topology를 이용해 "surface 기준으로" 채우고,
+그 다음 UV image 기준으로 "보이는 작은 구멍"을 마감한다.
 ```
 
-다.
+>> mesh에 만들어낸 텍스처 입히는 방법 처음부터 끝까지 아주 자세히 설명해줘
 
-### 18.3 2단계: OpenCV Navier-Stokes inpaint
+답:
 
-그 다음 남은 빈 영역은 OpenCV의:
+현재 파이프라인에서 "텍스처를 mesh에 입힌다"는 건 단순히 이미지 파일 하나 저장하는 게 아니라,  
+최종적으로:
 
-- `cv2.inpaint(..., cv2.INPAINT_NS)`
+- UV texture image를 만들고
+- 그 texture를 참조하는 OBJ/MTL을 저장하고
+- 필요하면 GLB까지 변환
 
-로 채운다.
+하는 전체 과정을 뜻합니다.
 
-여기서 `255 - mask`가 실제 인페인트 대상 영역이 된다.
+처음부터 끝까지 순서대로 쓰면 이렇습니다.
+
+`1) mesh 준비`
+
+[textureGenPipeline.py](/home/diglab/workspace/projects/MaterialMVP/textureGenPipeline.py) 에서:
+
+- mesh를 로드
+- 필요 시 remesh
+- 필요 시 UV wrap
+
+합니다.
+
+여기서 중요한 건 bake를 하려면 mesh가:
+
+- vertex position
+- face topology
+- UV coordinates
+
+를 가져야 한다는 점입니다.
+
+`2) renderer에 mesh 등록`
+
+그 다음:
+
+```python
+self.render.load_mesh(mesh=mesh)
+```
+
+를 호출합니다.
+
+이 단계에서 렌더러는 내부적으로:
+
+- `vtx_pos`
+- `pos_idx`
+- `vtx_uv`
+- `uv_idx`
+
+를 받아 저장합니다.
+
+그리고 UV texture space 쪽에서 쓸 보조 정보도 만듭니다.  
+예를 들어 `self.tex_position`, `self.tex_grid` 같은 것들이 이후 bake 때 사용됩니다.
+
+의미는:
+
+- UV의 각 texel이 mesh 상 어디를 대표하는지
+- texture 이미지의 어떤 위치가 어떤 표면에 대응하는지
+
+를 렌더러가 알고 있게 만드는 단계입니다.
+
+`3) multi-view 이미지 생성`
+
+선택된 view들에 대해:
+
+- `albedo` 이미지들
+- `mr` 이미지들
+
+을 생성합니다.
+
+이 시점 결과는 아직 mesh에 붙은 게 아니라 그냥 view 이미지들입니다.
+
+예:
+
+```text
+view_00_albedo.png
+view_01_albedo.png
+...
+view_00_mr.png
+...
+```
+
+`4) 각 view 이미지를 UV texture 공간으로 역투영`
+
+그 다음 `bake_from_multiview()`가 각 view마다 `back_project()`를 부릅니다.
+
+여기서 하는 일이 핵심입니다.
+
+각 UV texel에 대해:
+
+1. 그 texel이 대표하는 3D surface 위치를 가져오고
+2. 현재 view 카메라로 다시 투영해서
+3. image 상 어느 픽셀을 봐야 하는지 계산하고
+4. depth / visibility / normal cosine을 검사해서
+5. 유효하면 그 RGB 값을 texel에 채웁니다
 
 즉:
 
-- mask가 255인 곳: 이미 신뢰 가능한 texture 있음
-- mask가 0인 곳: 비어 있으므로 메워야 함
+```text
+UV texel -> 3D point -> current view image pixel -> sampled RGB
+```
 
-이다.
+입니다.
 
-Navier-Stokes inpaint는 주변 색/구조를 따라 빈 영역을 부드럽게 연장하는 2D 이미지 인페인팅 방식이다.
+이게 "이미지를 mesh에 입힌다"의 실질적인 수학적 과정입니다.
 
-### 18.4 왜 두 단계를 같이 쓰나
+`5) 각 view에서 얻은 texture 후보 merge`
 
-만약 OpenCV inpaint만 쓰면:
+한 view만으로는 전체 surface가 다 안 보이므로, 각 view에서 얻은 texture 후보들을 합칩니다.
 
-- UV seam 구조를 무시하고
-- 단순히 2D 이웃 정보만 이용해 채우게 된다
+이때:
 
-그러면 실제 mesh surface 상으로는 가까운 영역인데 UV상 멀리 떨어진 경우를 잘 활용하지 못한다.
+- 정면에 가까운 surface일수록 큰 weight
+- canonical view일수록 더 큰 prior weight 가능
+- 이미 거의 다 칠해진 view는 skip
 
-반대로 mesh connectivity 기반 단계만으로는 넓은 hole이나 복잡한 빈 영역을 완전히 메우기 어려울 수 있다.
+합니다.
 
-그래서 현재 구현은:
+최종적으로:
 
-1. mesh-aware vertex inpaint로 구조적인 빈칸을 먼저 줄이고
-2. 2D inpaint로 남은 작은 hole을 마감
+```text
+merged_albedo_texture
+merged_mr_texture
+```
 
-하는 하이브리드 전략을 쓴다.
+가 만들어집니다.
 
-### 18.5 이 단계의 한계
+이 상태는 아직 hole이 있을 수 있습니다.
 
-이건 새로운 texture를 "정답처럼 생성"하는 단계가 아니다.
+`6) hole inpaint`
 
-즉 `uv_inpaint()`는:
+merge 후 비어 있는 UV texel은:
 
-- 신뢰도 높은 bake 결과를 보존하면서
-- 비어 있는 곳을 주변 정보로 자연스럽게 메꾸는 후처리
+- mesh-aware vertex inpaint
+- OpenCV 2D inpaint
 
-에 가깝다.
+로 메웁니다.
 
-그래서:
+즉 최종 texture image를 usable한 상태로 다듬습니다.
 
-- 큰 가려진 영역
-- reference에 전혀 단서가 없는 뒷면
-- 반복 패턴이 중요한 재질
+`7) renderer에 texture 설정`
 
-에서는 완전한 정답 복원보다, seam 감소와 hole filling 역할로 이해하는 게 맞다.
+그 다음 [textureGenPipeline.py](/home/diglab/workspace/projects/MaterialMVP/textureGenPipeline.py) 에서:
 
----
+```python
+self.render.set_texture(texture, force_set=True)
+self.render.set_texture_mr(texture_mr)
+```
 
-## Reference
+를 호출합니다.
 
-- Paper: `MaterialMVP: Illumination-Invariant Material Generation via Multi-view PBR Diffusion`
-- Repo: https://github.com/ZebinHe/MaterialMVP
+이 단계는 렌더러 내부 mesh 객체에:
+
+- diffuse texture
+- metallic-roughness texture
+
+를 등록하는 단계입니다.
+
+즉 이제 렌더러는:
+
+- 어떤 mesh geometry를 쓸지
+- 그 mesh가 어떤 UV를 쓸지
+- 그 UV에 어떤 texture image가 연결되는지
+
+를 모두 알고 있습니다.
+
+`8) save_mesh()로 OBJ/MTL/texture 파일 저장`
+
+그 다음:
+
+```python
+self.render.save_mesh(output_mesh_path, downsample=True)
+```
+
+가 호출됩니다.
+
+이 함수는 내부적으로:
+
+- mesh vertex / face / uv
+- texture image
+- metallic map
+- roughness map
+
+을 꺼내서 저장합니다.
+
+저장 결과는 보통:
+
+- `textured_mesh.obj`
+- `textured_mesh.mtl`
+- `textured_mesh.jpg`
+- `textured_mesh_metallic.jpg`
+- `textured_mesh_roughness.jpg`
+
+형태입니다.
+
+중요한 점은 OBJ 파일 안에는 texture 픽셀 데이터가 직접 들어가는 게 아니라:
+
+- vertex
+- face
+- uv coordinate
+- mtl 참조
+
+가 들어가고,  
+MTL 파일이 다시 texture image 파일 경로를 가리킨다는 것입니다.
+
+즉 "텍스처를 mesh에 입힌다"는 건 결국:
+
+```text
+mesh geometry + uv coordinates + texture image file reference
+```
+
+를 함께 저장하는 것입니다.
+
+`9) GLB 변환`
+
+마지막으로 옵션이 켜져 있으면:
+
+```python
+convert_obj_to_glb(...)
+```
+
+를 호출합니다.
+
+이 단계에서는 Blender를 이용해 OBJ/MTL/texture를 읽고,  
+그걸 하나의 GLB asset으로 묶습니다.
+
+즉 결과적으로:
+
+- OBJ + MTL + texture 파일 세트
+또는
+- GLB 하나
+
+로 최종 산출됩니다.
+
+한 줄로 전체를 요약하면:
+
+```text
+multi-view로 생성한 2D albedo/mr 이미지를
+mesh의 UV texel에 역투영해서 하나의 texture atlas로 만들고,
+그 texture atlas를 UV 좌표를 통해 OBJ/GLB mesh에 연결해 저장한다.
+```
