@@ -25,12 +25,12 @@ StableMaterialMV를 이용하여 albedo map과 ORM map을 추정한 뒤, 이를 
 ### 실험 1: 전체 view 입력
 
 입력 데이터  
-<img src="../../../docs/assets/projects/dental-texture-pipeline/results/input_data_lightswitch1.png" width="700">
+<img src="../../../docs/assets/projects/dental-texture-pipeline/results/input_data_lightswitch1.png" width="800">
 
 결과  
-<img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1.png" width="700">
+<img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1.png" width="800">
 
-<img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1_1.webp" width="170"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1_2.webp" width="170"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1_3.webp" width="170"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1_4.webp" width="170">
+<img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1_1.webp" width="200"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1_2.webp" width="200"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1_3.webp" width="200"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch1_4.webp" width="200">
 
 → 멀티뷰 입력 시 치아 뒷면 이미지(잇몸 비중이 높은 view)가 전체 색 분포에 영향을 준 것으로 판단됨
 
@@ -39,12 +39,12 @@ StableMaterialMV를 이용하여 albedo map과 ORM map을 추정한 뒤, 이를 
 ### 실험 2: 앞면 view만 입력
 
 입력 데이터  
-<img src="../../../docs/assets/projects/dental-texture-pipeline/results/input_data_lightswitch2.png" width="700">
+<img src="../../../docs/assets/projects/dental-texture-pipeline/results/input_data_lightswitch2.png" width="800">
 
 결과  
-<img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2.png" width="700">
+<img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2.png" width="800">
 
-<img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2_1.png" width="170"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2_2.webp" width="170"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2_3.webp" width="170"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2_4.webp" width="170">
+<img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2_1.webp" width="200"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2_2.webp" width="200"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2_3.webp" width="200"> <img src="../../../docs/assets/projects/dental-texture-pipeline/results/output_lightswitch2_4.webp" width="200">
 
 → 전체적인 붉은 색 편향은 감소하였으나 완전히 제거되지는 않음  
 → 또한, 붉은 색이 상대적으로 적은 결과들 간에도 view 간 색상 차이가 여전히 존재함
@@ -63,4 +63,4 @@ StableMaterialMV를 이용하여 albedo map과 ORM map을 추정한 뒤, 이를 
 | <img src="../../../docs/assets/projects/dental-texture-pipeline/results/Intrinsic_input_4.webp" width="180"> | <img src="../../../docs/assets/projects/dental-texture-pipeline/results/Intrinsic_alb_4.webp" width="180"> | <img src="../../../docs/assets/projects/dental-texture-pipeline/results/Intrinsic_shd_4.webp" width="180"> |
 
 
-→ 일부 shading 제거 효과는 확인되나, single-view 기반 intrinsic decomposition이기 때문에 view 간 consistency는 보장되지 않음  
+→ 일부 shading 제거 효과는 확인되나, 완벽히 제거 안됨. 또한, single-view 기반 intrinsic decomposition이기 때문에 view 간 consistency는 보장되지 않음  
