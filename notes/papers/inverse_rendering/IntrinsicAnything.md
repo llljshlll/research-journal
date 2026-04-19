@@ -5,6 +5,10 @@ Inverse Rendering under unknown lighting
 I = geometry × material × lighting
 => 하나만 바꿔도 같은 이미지 만들 수 있음, 해가 무한개 (ill-posed)
 
+/Users/jangseohyeon/Desktop/연구실/research-journal/docs/assets/papers/inverse_rendering/InterinsicAnything/Fig1.png
+
+<img src="../../docs/assets/papers/inverse_rendering/InterinsicAnything/Fig1.png" width="420" />
+
 기존 접근 : differentiable rendering, GT image reconstruction loss 최소화
 문제
 - shading ↔ albedo 구분 못함 ex.노란 조명 → albedo도 노랗게 학습됨, 흰색 albedo + 노란 조명 / 노란 albedo + 흰 조명 둘 다 같은 이미지
@@ -29,4 +33,5 @@ Stage 2: **guided diffusion refinement** - Stage 1에서 얻은 coarse albedo / 
 
 
 ## 3. 우리 방식에 적용 가능 여부
-1. 조명이 모든 이미지에서 동일해야하는데 우리는 그게 안됨
+조건 : 
+1. 조명이 모든 이미지에서 동일해야 함
