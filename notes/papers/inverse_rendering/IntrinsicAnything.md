@@ -5,9 +5,8 @@ Inverse Rendering under unknown lighting
 I = geometry × material × lighting
 => 하나만 바꿔도 같은 이미지 만들 수 있음, 해가 무한개 (ill-posed)
 
-/Users/jangseohyeon/Desktop/연구실/research-journal/docs/assets/papers/inverse_rendering/InterinsicAnything/Fig1.png
 
-<img src="../../docs/assets/papers/inverse_rendering/InterinsicAnything/Fig1.png" width="420" />
+<img src="../../../docs/assets/papers/inverse_rendering/InterinsicAnything/Fig1.png" width="420" />
 
 기존 접근 : differentiable rendering, GT image reconstruction loss 최소화
 문제
@@ -17,8 +16,8 @@ I = geometry × material × lighting
 
 ## 2. Mechanism
 기본 구조
-입력 : posed multi-view RGB images (단, 조명은 모든 이미지에서 동일해야함(unknown static illumination))
-출력 : geometry, albedo, roughness, lighting
+- input : multi-view RGB images, geometry, UV mapping (단, 조명은 모든 이미지에서 동일해야함(unknown static illumination))
+- rendering : PBR (albedo + roughness + lighting → RGB)
 
 geometry, albedo, roughness, lighting로 PBR RGB 렌더링 후 inverse rendering
 *하지만 여기서 끝내면, shading이 albedo에 박히고, shadow가 texture에 baked-in 되고 lighting/material이 서로 뒤섞임
