@@ -1,5 +1,11 @@
 # IntrinsicAnything: Learning Diffusion Priors for Inverse Rendering Under Unknown Illumination
 
+## Related
+
+- [[intrinsic-decomposition]]
+- [[inverse-rendering]]
+- [[texture-baking]]
+
 ## 1. Motivation
 Inverse Rendering under unknown lighting
 I = geometry × material × lighting

@@ -74,7 +74,7 @@ UNet은 이미지를 직접 생성하지 않으며,
 
 UNet은 Encoder–Middle–Decoder 구조를 기반으로 하며,  
 downsampling과 upsampling을 통해 다중 해상도에서 latent feature를 처리
-  <img src="../../../docs/assets/models/stalbe_diffusion/UNet_architecture.png"> 
+  <img src="../../../docs/assets/models/stable_diffusion/UNet_architecture.png"> 
 - Encoder (Down blocks)  
   - 해상도를 점진적으로 감소  
   - 국소적 세부 정보 → 점차 전역적 구조 추출  
@@ -102,7 +102,6 @@ timestep embedding은 SiLU와 Linear layer를 거쳐
 동일한 구조의 convolution 연산을 서로 다른 방식으로 조절하며,  
 diffusion 과정의 시간적 위치를 명시적으로 반영한다.
 
-<img src="../../../docs/assets/models/flux/UNet_ResBlock.png"> 
 ResBlock 내부 동작은 다음과 같다.
 
 - 입력 feature
@@ -139,8 +138,6 @@ FeedForward 네트워크가 적용되며,
 전체 블록은 residual connection을 통해  
 입력 feature와 안정적으로 결합된다.
  
-<img src="../../../docs/assets/models/flux/UNet_AttnBlock.png"> 
-
 Attention Block 내부 처리 흐름은 다음과 같다.
 
 - 입력 feature
@@ -161,7 +158,7 @@ Attention Block 내부 처리 흐름은 다음과 같다.
 
 > Self-Attention 및 Cross-Attention의  
 > 내부 연산 구조(QKV, scaling, softmax)에 대한 자세한 설명은  
-> [concepts/attention.md](../../concepts/attention.md) 참고.
+> [[attention]] 참고.
 
 
 ##### 3 - Conv / Downsample / Upsample Block
@@ -175,7 +172,6 @@ convolution 및 interpolation 기반으로 수행되어,
 
 
 **Conv Block (Spatial size preserved)**
-<img src="../../../docs/assets/models/flux/UNet_ConvBlock.png"> 
 Conv Block은 공간 해상도를 유지한 채  
 channel 차원의 변환을 수행하는 기본 convolution 블록.
 
@@ -188,7 +184,6 @@ channel 차원의 변환을 수행하는 기본 convolution 블록.
 - 마지막 convolution에는 GroupNorm과 SiLU 활성화가 적용된다.
 
 **Downsample Block**
-<img src="../../../docs/assets/models/flux/UNet_DownSampleBlock.png">
 Downsample Block은 spatial resolution을 절반으로 줄여  
 더 넓은 receptive field에서 feature를 추출하도록 한다.
 
@@ -201,7 +196,6 @@ Downsample Block은 spatial resolution을 절반으로 줄여
 - 전역 구조 정보는 강조
 
 **Upsample Block**
-<img src="../../../docs/assets/models/flux/UNet_UpsampleBlock.png">
 Upsample Block은 축소된 spatial resolution을 복원하여  
 고해상도 feature 생성을 가능하게 한다.
 
@@ -258,7 +252,7 @@ CLIP Text Encoder를 사용한다.
 
 > CLIP의 토큰화 방식, 임베딩 의미 공간,  
 > 이미지–텍스트 정렬 학습에 대한 자세한 설명은  
-> [concepts/clip.md](../../concepts/clip.md) 참고.
+> [[clip]] 참고.
 
 
 ---

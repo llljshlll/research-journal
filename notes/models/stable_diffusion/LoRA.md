@@ -85,15 +85,13 @@ LoRA는 여기서 다음 projection weight에 삽입된다.
 
 ### 4.1 기존 구조
 
-![sd_cross_attention](../../../docs/assets/models/stable_diffusion/stalbe_diffusion_architecture.png)
+![sd_cross_attention](../../../docs/assets/models/stable_diffusion/stable_diffusion_architecture.png)
 
 > UNet Cross-Attention에서 image latent와 text embedding이 결합됨
 
 ---
 
 ### 4.2 LoRA 삽입 구조
-
-![sd_lora_injection](../../../docs/assets/models/stable_diffusion/sd_lora_injection.png)
 
 ```
 Wq = Wq0 + Bq Aq

@@ -1,5 +1,12 @@
 # Skyfall-GS: Synthesizing Immersive 3D Urban Scenes from Satellite Imagery
 
+## Related
+
+- [[gaussian-splatting]]
+- [[spherical-harmonics|Spherical Harmonics]]
+- [[multi-view-consistency]]
+- [[flux_overview|FLUX]]
+
 GS 와 diffusion 의 조합 논문  
 우리와 같이 diffusion 모델을 쓰면서 GS로 뷰를 재구성하기 위해 논문 읽음  
 
@@ -386,7 +393,6 @@ satellite imagery 환경에서 부족한 기하 정보를 보완하기 위해
   - multi-sample diffusion과 반복적인 IDU 과정으로 인해
     training time 및 연산 자원 요구량 증가.
   - 대규모 도시 장면 적용 시 비용 부담 큼.
-
 
 
 

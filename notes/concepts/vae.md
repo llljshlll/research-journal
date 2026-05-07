@@ -7,6 +7,12 @@ Variational Autoencoder(VAE)는
 본 문서는 AutoEncoder와 VAE의 차이,  
 그리고 VAE가 연속적이고 의미 있는 latent space를 형성하는 이유를 정리한다.
 
+## Related
+
+- [[overview|Stable Diffusion]]
+- [[TAESD]]
+- [[ctrLoRA|CtrLoRA]]
+
 ---
 
 ## 1. AutoEncoder (AE)

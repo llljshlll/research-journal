@@ -7,6 +7,12 @@
 > **3D Gaussian Splatting에서의 뷰 의존 색상(방사휘도)** 을  
 > 저차수 계수로 압축해 다루는 데 사용된다.
 
+## Related
+
+- [[gaussian-splatting]]
+- [[3d_gaussian_splatting|3D Gaussian Splatting]]
+- [[skyfall-gs|Skyfall-GS]]
+
 ---
 
 ## 1. Spherical Harmonics란 무엇인가

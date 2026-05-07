@@ -1,5 +1,11 @@
 # TINKER: Diffusion’s Gift to 3D — Multi-View Consistent Editing from Sparse Inputs
 
+## Related
+
+- [[multi-view-consistency]]
+- [[gaussian-splatting]]
+- [[flux_overview|FLUX]]
+
 3DGS + diffusion 기반 3D editing 논문  
 per-scene optimization 없이  
 **1~2장 입력만으로 multi-view consistent 3D editing**을 목표로 함  
@@ -54,10 +60,6 @@ multi-view consistency를 image 단계에서 해결하는 접근.
 
 TINKER는 **two-component framework**로 구성됨.
 
-![Overall pipeline of TINKER](../../docs/assets/papers/tinker/fig3_pipeline.png)
-
-*Source: TINKER (Zhao et al., 2025), Fig. 3*
-
 ```
 Original 3DGS
   ↓ render
@@ -91,10 +93,6 @@ Edited 3DGS  ← 최종 결과
 - 하지만
   - 서로 다른 pair 간 consistency는 유지되지 않음
   - reference-based editing 능력 부재
-
-![Limitation of vanilla FLUX Kontext](../../docs/assets/papers/tinker/fig2_flux_limitation.png)
-
-*Source: TINKER, Fig. 2*
 
 ---
 
@@ -146,10 +144,6 @@ Loss = E || E_θ(z_t, t, P) − u(z'_t) ||^2
 - reference view를 기준으로
 - 다른 view에 **동일한 editing intent를 전파** 가능
 
-![Referring-based multi-view editing](../../docs/assets/papers/tinker/fig4_referring_editing.png)
-
-*Source: TINKER, Fig. 4*
-
 ---
 
 ## 2.2 Scene Completion — Sparse to Dense View Propagation
@@ -176,10 +170,6 @@ TINKER는 이를
 - 조건 입력:
   - **Depth maps** (강한 geometry constraint)
   - **Sparse edited reference views**
-
-![Scene completion architecture](../../docs/assets/papers/tinker/fig5_scene_completion.png)
-
-*Source: TINKER, Fig. 5*
 
 ---
 
@@ -216,8 +206,6 @@ Loss = E || Φ_θ(X_t_input, t) − u(Z_t) ||^2
 ---
 
 ## 2.3 One-Shot / Few-Shot 3D Editing Pipeline
-
-![Overall editing workflow](../../docs/assets/papers/tinker/fig3_pipeline.png)
 
 ### Few-shot
 1. 3DGS에서 sparse views 렌더링
@@ -269,4 +257,3 @@ Loss = E || Φ_θ(X_t_input, t) − u(Z_t) ||^2
   - depth-constrained reconstruction 특성
 - **Self-generated dataset 한계**
   - fine detail inconsistency 가능
-

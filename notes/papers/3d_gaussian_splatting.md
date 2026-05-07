@@ -1,5 +1,11 @@
 # 3D Gaussian Splatting for Real-Time Radiance Field Rendering
 
+## Related
+
+- [[gaussian-splatting]]
+- [[spherical-harmonics|Spherical Harmonics]]
+- [[multi-view-consistency]]
+
 GS 기반 **explicit scene representation** 논문  
 NeRF 계열의 volumetric rendering 품질을 유지하면서,  
 **real-time rendering이 가능한 radiance field 표현을 최초로 제안**한 foundational work  
@@ -218,4 +224,3 @@ dense Gaussian scene으로 자동 확장
 - **No explicit geometry prior**
   - mesh / depth / semantic constraint 없음
   - 후속 연구에서 개선 여지 존재
-
