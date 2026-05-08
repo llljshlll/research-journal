@@ -105,6 +105,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "notes/meetings/2026_04_29.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -114,7 +115,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "백링크"
+              "title": "2026_04_29 의 백링크"
             }
           },
           {
@@ -123,11 +124,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "notes/meetings/2026_04_29.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "나가는 링크"
+              "title": "2026_04_29 의 나가는 링크"
             }
           },
           {
@@ -165,13 +167,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "notes/planning/2026-05-01-texture-baking-refactor.md",
+                "file": "notes/meetings/2026_04_29.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "2026-05-01-texture-baking-refactor 의 개요"
+              "title": "2026_04_29 의 개요"
             }
           }
         ]
@@ -192,8 +194,11 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "8befc925b7c5d8a4",
+  "active": "03bf616f3e227680",
   "lastOpenFiles": [
+    "docs/assets/meetings/20260507/gathering_white.png",
+    "docs/assets/meetings/20260507/splatting_white.png",
+    "notes/planning/2026-05-01-texture-baking-refactor.md",
     "docs/assets/meetings/20260507/render_pre_view_00023_gather.png",
     "docs/assets/meetings/20260507/render_pre_view_00017_gather.png",
     "docs/assets/meetings/20260507/render_pre_view_00013_gather.png",
@@ -203,8 +208,6 @@
     "docs/assets/meetings/20260507/render_post_view_00017_gather.png",
     "docs/assets/meetings/20260507/render_post_view_00013_gather.png",
     "docs/assets/meetings/20260507/render_post_view_00006_gather.png",
-    "docs/assets/meetings/20260507/render_post_view_00001_gather.png",
-    "docs/assets/meetings/20260507/coverage_after_loop0005_view_00023_heat_gather.png",
     "notes/planning/2026-04-30-texture-baking-refactor.md",
     "docs/assets/meetings/20260507",
     "docs/assets/meetings/2026_05_07",
@@ -215,7 +218,6 @@
     "notes/planning/Test.md",
     "notes/meetings/2026_04_29.md",
     "notes/concepts/texture-baking.md",
-    "notes/planning/2026-05-01-texture-baking-refactor.md",
     "AGENTS.md.md",
     "notes/planning",
     "planning/2026-05-01-texture-baking-refactor.md",
