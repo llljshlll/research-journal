@@ -196,17 +196,19 @@
   },
   "active": "03bf616f3e227680",
   "lastOpenFiles": [
+    "docs/assets/meetings/20260510/render_post_view_00023_UV.webp",
+    "docs/assets/meetings/20260510/render_post_view_00017_UV.webp",
+    "docs/assets/meetings/20260510/render_post_view_00013_UV.webp",
+    "docs/assets/meetings/20260510/미확인 134341.crdownload",
+    "docs/assets/meetings/20260510/render_post_view_00006_UV.webp",
+    "docs/assets/meetings/20260510/미확인 145262.crdownload",
+    "docs/assets/meetings/20260510/render_post_view_00001_UV.webp",
     "docs/assets/meetings/20260510/render_pre_view_00023.png",
     "docs/assets/meetings/20260510/render_pre_view_00017.png",
     "docs/assets/meetings/20260510/render_pre_view_00013.png",
     "docs/assets/meetings/20260510/render_pre_view_00006.png",
     "docs/assets/meetings/20260510/render_pre_view_00001.png",
     "docs/assets/meetings/20260510/render_post_view_00023.png",
-    "docs/assets/meetings/20260510/render_post_view_00017.png",
-    "docs/assets/meetings/20260510/render_post_view_00013.png",
-    "docs/assets/meetings/20260510/render_post_view_00006.png",
-    "docs/assets/meetings/20260510/render_post_view_00001.png",
-    "docs/assets/meetings/20260510/coverage_after_loop0005_view_00023_heat.png",
     "docs/assets/meetings/20260510",
     "notes/meetings/2026_05_10.md",
     "notes/planning/2026-05-01-texture-baking-refactor.md",
@@ -241,7 +243,6 @@
     "무제.base",
     "무제.canvas",
     "무제 1.canvas",
-    "무제",
-    "agents"
+    "무제"
   ]
 }
