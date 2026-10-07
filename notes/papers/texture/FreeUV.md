@@ -3,6 +3,8 @@
 > **한 줄 요약** : Image → UV (ground-truth-free)  
 > UV ground truth 없이, 외형을 담당하는 network와 구조를 담당하는 network를 따로 학습한 뒤 추론 시 조합(Cross-Assembly)하여 단일 얼굴 이미지에서 완성된 UV texture 복원
 
+<img src="../../../docs/assets/papers/texture/FreeUV_fig1.png" alt="논문 Fig. 1 : 입력 얼굴, 복원한 UV texture, FLAME 기반 rendering" width="800">
+
 ## 1. 배경
 
 **목표**
@@ -86,6 +88,8 @@
   - ControlNet이 `I_uv`(masked 2D UV position map)와 `I_lm`(landmark)을 구조 단서로 받아, masked skin 영역 이미지 `I_w` 생성
 - 2D landmark를 쓰는 이유 : 3DMM fitting이 `I_uv`와 `I_w` 사이의 pixel 수준 정렬을 만들지 못하므로 보조 정렬 guide로 사용
 
+<img src="../../../docs/assets/papers/texture/FreeUV_eq1.png" alt="논문 Eq. (1)" width="419">
+
 ```
 L_a = E[ || epsilon - epsilon_theta(x_t, t, c_T^w, c_I^uv, c_I^lm) ||^2 ]
 ```
@@ -99,6 +103,8 @@ L_a = E[ || epsilon - epsilon_theta(x_t, t, c_T^w, c_I^uv, c_I^lm) ||^2 ]
   - 입력 : masked 3DMM 이미지 `I_m` (CLIP encoder + self-attention), masked UV position map `T_uv` (ControlNet)
   - 출력 target : masked 3DMM UV texture `T_m`
 - feature 추출기에 CLIP 기반 spatial-aware self-attention 사용 (Stable-Makeup 방식)
+
+<img src="../../../docs/assets/papers/texture/FreeUV_eq2.png" alt="논문 Eq. (2)" width="390">
 
 ```
 L_s = E[ || epsilon - epsilon_theta(x_t, t, c_I^m, c_T^uv) ||^2 ]

@@ -3,6 +3,8 @@
 > **한 줄 요약** : View → UV projection  
 > 각 view에서 depth-aware diffusion으로 생성한 결과를 UV에 누적한 뒤, 자동 선택한 view로 refinement
 
+<img src="../../../docs/assets/papers/texture/Text2Tex_fig1.png" alt="논문 Fig. 1 : texture 없는 mesh와 text prompt로 생성한 texture" width="800">
+
 ## 1. 배경
 
 **문제**
@@ -32,6 +34,8 @@
 - mesh의 depth를 condition으로 입력하여 geometry를 최대한 유지
 - Depth2Image는 이미지 전체를 생성하는 모델이므로, inpainting mask `M`을 sampling 과정에 주입하여 생성할 영역과 고정할 영역 지정
 - mask 적용 방식은 RePaint와 유사한 denoising guidance
+
+<img src="../../../docs/assets/papers/texture/Text2Tex_eq4.png" alt="논문 Eq. (4)" width="337">
 
 ```
 z_hat = z_hat ⊙ M + z_t ⊙ (1 - M)
@@ -84,6 +88,8 @@ denoising strength `γ` (0 < γ ≤ 1)
 3. view heat가 최대인 view를 다음 update 대상으로 선택
 4. 해당 view에서 Update 영역만 mild denoising strength(`γr`)로 다시 생성한 뒤 texture에 back-project
 5. 반복
+
+<img src="../../../docs/assets/papers/texture/Text2Tex_viewheat.png" alt="논문 view heat 수식 (본문 내 수식)" width="438">
 
 ```
 h_i = (1 / N_p) · Σ_k w_k

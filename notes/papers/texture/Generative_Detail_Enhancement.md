@@ -2,6 +2,8 @@
 
 > **한 줄 요약** : pretrained 2D diffusion으로 multi-view 일관성을 갖춘 detail 이미지 생성 → inverse rendering으로 PBR material reconstruction (training-free)
 
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig1.png" alt="논문 Fig. 1 : 기존 asset(a)과 diffusion 결과(b, c), 강화된 asset(d)" width="800">
+
 ## 1. 배경
 
 - 3D asset의 기본적인 geometry와 material은 비교적 쉬운 구성이 가능하나, 실제감을 주는 wear, rust, dust, crack, weathering 등 세밀한 material detail은 수작업 제작에 많은 시간 필요
@@ -87,6 +89,8 @@ Stable Diffusion 1.5 기반의 공개된 ControlNet Tile + ControlNet Normal 사
 3. projection된 subpixel 중심에서 noise를 sampling하여 면적 가중 평균 계산
 4. 분산 보정 : projection 면적이 pixel마다 다르고 여러 subpixel이 같은 noise texel에 mapping될 수 있으므로 정규화
 
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_noise.png" alt="논문 본문 수식 (분산 정규화)" width="448">
+
 ```
 noise_pixel = Σ_i (f_i · A_i) / sqrt( Σ_i A_i^2 · (1 + Cov_i) )
 Cov_i       = max(A_texel / A_i - 1, 0)
@@ -114,6 +118,8 @@ Attention(Q, K, V) = softmax(Q K^T / sqrt(d_k)) V
 - 항목 `[i, j]`는 latent pixel `i`가 `j`에 attend하는 정도
 
 bias를 추가한 attention 수식 (논문 Eq. 2)
+
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_eq2.png" alt="논문 Eq. (2)" width="377">
 
 ```
 Attention(Q, K, V) = softmax((Q K^T + B) / sqrt(d_k)) V

@@ -3,6 +3,8 @@
 > **한 줄 요약** : View → UV inpainting  
 > Normal/Position 조건의 multi-view 생성 → UV projection → Normal/Position 조건으로 UV hole filling (feed-forward, 20초 이내)
 
+<img src="../../../docs/assets/papers/texture/Meta3D_fig1.png" alt="논문 Fig. 1 : Meta 3D TextureGen이 생성한 texture 예시" width="700">
+
 ## 1. 배경
 
 **기존 방식의 문제 3가지**
@@ -71,6 +73,8 @@
 - 입력 : 4개 view의 position grid `P_grid(S)`, normal grid `N_grid(S)`, text prompt `t*`
 - view 구성 : 90° 간격 4개 view(360° 커버), elevation 20° 고정, 학습과 추론에서 동일
 
+<img src="../../../docs/assets/papers/texture/Meta3D_eq1.png" alt="논문 Eq. (1)" width="362">
+
 ```
 I(S, t*) = f(z, t*, P_grid(S), N_grid(S))
 ```
@@ -94,6 +98,8 @@ I(S, t*) = f(z, t*, P_grid(S), N_grid(S))
 - SyncMVD와 유사하게 incidence angle로 가중 평균하여 하나의 UV map으로 blending
 - incidence : 시선 방향과 pixel의 normal 사이 각도의 cosine
 
+<img src="../../../docs/assets/papers/texture/Meta3D_eq2.png" alt="논문 Eq. (2)" width="457">
+
 ```
 phi(I_i, p) = cos( angle( v_i(p), n(I_i, p) ) )
 
@@ -110,6 +116,8 @@ C_UV(p) = ( Σ_j  BP(I_j)(p) ⊙ BP( phi(I_j, p)^alpha ) ) / ( Σ_j BP( phi(I_j,
   - 생성된 렌더링과 UV map 사이에 pixel 일대일 대응이 없어 생기는 pixel 단위 hole
 - 모델 : Stage I과 같은 pre-trained network를 fine-tuning한 `g`
 - 입력 : blending된 partial texture `C_UV`, inpainting mask `M_UV`, position UV map `P_UV`, normal UV map `N_UV`
+
+<img src="../../../docs/assets/papers/texture/Meta3D_eq3.png" alt="논문 Eq. (3)" width="457">
 
 ```
 Texture(S, t*) = g(z, C_UV(S, t*), M_UV(S), P_UV(S), N_UV(S))

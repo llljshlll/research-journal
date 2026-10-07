@@ -3,6 +3,8 @@
 > **한 줄 요약** : Image → UV + PBR  
 > diffusion feature로 입력 이미지의 조명을 제거(diffuse color 추출)한 뒤 FLAME mesh에 맞는 UV texture를 만들고, authenticity guidance로 PBR texture(diffuse, normal, specular, roughness)를 생성
 
+<img src="../../../docs/assets/papers/texture/UltrAvatar_fig1.png" alt="논문 Fig. 1 : text 또는 단일 이미지에서 생성한 3D avatar" width="800">
+
 ## 1. 배경
 
 **목표**
@@ -42,6 +44,8 @@
 - Stable Diffusion은 latent `z = E(x)`에서 동작, 최종 이미지는 `x_0 = D(z_0)`
 - noise 예측 학습 목적
 
+<img src="../../../docs/assets/papers/texture/UltrAvatar_eq1.png" alt="논문 Eq. (1)" width="392">
+
 ```
 min E[ || epsilon - epsilon_theta(z_t, t, tau(y)) ||^2 ]
 ```
@@ -50,6 +54,8 @@ min E[ || epsilon - epsilon_theta(z_t, t, tau(y)) ||^2 ]
   - residual block의 출력 : res-feature `f_t^l` (생성 이미지의 내용(RGB detail)에 기여)
   - self-attention의 입력 `phi_t^(l-1) + f_t^l`에서 query `q_t^l`, key `k_t^l`, value `v_t^l` 생성 (전체 구조/layout 정보)
 - Classifier-Free Guidance
+
+<img src="../../../docs/assets/papers/texture/UltrAvatar_eq2.png" alt="논문 Eq. (2)" width="423">
 
 ```
 eps_tilde = omega · eps_theta(z_t, t, tau(y)) + (1 - omega) · eps_theta(z_t, t, null)
@@ -128,6 +134,8 @@ eps_tilde = omega · eps_theta(z_t, t, tau(y)) + (1 - omega) · eps_theta(z_t, t
 **Photometric Guidance**
 - 렌더링한 avatar와 `I_d`를 가깝게 하여 생성 texture를 입력 이미지와 정렬
 
+<img src="../../../docs/assets/papers/texture/UltrAvatar_eq3.png" alt="논문 Eq. (3)" width="438">
+
 ```
 G_P = omega_photo · || V_d ⊙ ( R(M, D_d(z_t), c*) - I_d ) ||^2
     + omega_lpips · L_lpips( V_d ⊙ R(M, D_d(z_t), c*), V_d ⊙ I_d )
@@ -138,6 +146,8 @@ G_P = omega_photo · || V_d ⊙ ( R(M, D_d(z_t), c*) - I_d ) ||^2
 **Edge Guidance**
 - canny edge로 high-frequency detail(주름, 주근깨, 모공, 점, 흉터) 유지
 
+<img src="../../../docs/assets/papers/texture/UltrAvatar_eq4.png" alt="논문 Eq. (4)" width="427">
+
 ```
 G_E = || V_d ⊙ ( C(R(M, D(z_t), c*)) - C(I_d) ) ||^2
 ```
@@ -145,6 +155,8 @@ G_E = || V_d ⊙ ( C(R(M, D(z_t), c*)) - C(I_d) ) ||^2
 - `C(·)` : canny edge detection
 
 **통합** : 두 guidance의 gradient를 classifier-free guidance sampling에 추가
+
+<img src="../../../docs/assets/papers/texture/UltrAvatar_eq5.png" alt="논문 Eq. (5)" width="421">
 
 ```
 eps_tilde = omega · eps_theta(z_t, t, tau(y)) + (1 - omega) · eps_theta(z_t, t, null)

@@ -3,6 +3,8 @@
 > **한 줄 요약** : 직접 생성 (semantic, 제한된 도메인)  
 > UV LDM(Latent Diffusion Model)을 semantic UV texture domain(SMPL UV, 3D human)에 LoRA fine-tuning하여 text 또는 image에서 UV texture를 직접 생성 (zero-shot)
 
+<img src="../../../docs/assets/papers/texture/TexDreamer_fig1.png" alt="논문 Fig. 1 : ATLAS dataset(왼쪽)과 TexDreamer 구조(오른쪽)" width="800">
+
 ## 1. 배경
 
 **문제**
@@ -51,6 +53,8 @@
 
 LoRA : weight의 update가 낮은 "intrinsic rank"를 가진다는 점을 이용
 
+<img src="../../../docs/assets/papers/texture/TexDreamer_eq1.png" alt="논문 Eq. (1)" width="493">
+
 ```
 W_new = W + delta_W = W + B A
 B in R^(d x r),  A in R^(r x k),  r << min(d, k)
@@ -66,6 +70,8 @@ s_tilde = W s + B A s
 - 각 attention layer에 소수의 학습 parameter(LoRA)를 추가하여, 작은 dataset의 공통 concept(UV 구조)을 학습
 - 입력 GT UV image `x`는 SD image encoder `E`로 encoding, text는 text encoder `phi_t-enc`로 encoding
 - U-Net과 text encoder의 LoRA를 함께 optimization
+
+<img src="../../../docs/assets/papers/texture/TexDreamer_eq2.png" alt="논문 Eq. (2)" width="514">
 
 ```
 L1 = E[ || epsilon - phi_unet(z_t, t, phi_t-enc(c)) ||^2 ]
@@ -96,6 +102,8 @@ L1 = E[ || epsilon - phi_unet(z_t, t, phi_t-enc(c)) ||^2 ]
 3. 3-layer transformer decoder `phi_i-dec`가 learnable query `q`와 함께 처리
 4. 결과 `f_i2t`는 text feature와 같은 형태
 
+<img src="../../../docs/assets/papers/texture/TexDreamer_eq3.png" alt="논문 Eq. (3)" width="485">
+
 ```
 f_i2t = phi_i-dec( phi_MLP(f_voken), q )     # f_i2t in R^(77 x 1024)
 ```
@@ -106,6 +114,8 @@ f_i2t = phi_i-dec( phi_MLP(f_voken), q )     # f_i2t in R^(77 x 1024)
 - `f_i2t`는 본질적으로 text feature이므로 T2UV 생성 과정에 condition으로 직접 사용 가능
 - 생성된 UV texture를 ground truth로 사용하고, 이를 LDM image encoder로 encoding한 `z_0`에 noise `epsilon`을 더해 `z_t` 생성
 - image encoder와 feature translator를 LDM denoise loss로 학습 (T2UV의 LoRA는 고정)
+
+<img src="../../../docs/assets/papers/texture/TexDreamer_eq4.png" alt="논문 Eq. (4)" width="513">
 
 ```
 L2 = E[ || epsilon - phi_unet(z_t, t, f_i2t) ||^2 ],   f_i2t = phi_i2t( phi_i-enc(y) )

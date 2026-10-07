@@ -3,6 +3,8 @@
 > **한 줄 요약** : View → UV refinement  
 > view에서 coarse texture 생성 → UV space에서 hole filling + 조명(lighting) 제거 (lighting-less 2K UV texture)
 
+<img src="../../../docs/assets/papers/texture/Paint3D_fig1.png" alt="논문 Fig. 1 : 생성된 texture 결과 gallery" width="800">
+
 ## 1. 배경
 
 **핵심 문제 2가지**
@@ -55,6 +57,8 @@ T = P(M, c) = F(C(M, c))
 
 **첫 번째 view** : depth 조건만으로 이미지 생성
 
+<img src="../../../docs/assets/papers/texture/Paint3D_eq1.png" alt="논문 Eq. (1)" width="309">
+
 ```
 I_1 = D(z, c, d_1 ; tau_c, tau_d)
 ```
@@ -63,12 +67,16 @@ I_1 = D(z, c, d_1 ; tau_c, tau_d)
 
 **이후 view** : 이미 칠해진 영역은 유지하고 비어 있는 영역만 inpainting
 
+<img src="../../../docs/assets/papers/texture/Paint3D_eq2.png" alt="논문 Eq. (2)" width="341">
+
 ```
 I_k = D(I_hat_k, m_k, c, d_k ; tau_i, tau_c, tau_d)
 ```
 
 - `I_hat_k` : 현재 view에서 렌더링한 부분 채색 RGB 이미지, `m_k` : 아직 칠해지지 않은 영역의 mask
 - 현재 view의 texture를 UV에 합칠 때는 기존 영역 유지, 빈 영역만 갱신
+
+<img src="../../../docs/assets/papers/texture/Paint3D_eq3.png" alt="논문 Eq. (3)" width="412">
 
 ```
 T_hat_{1,k} = m_UV_{k-1} ⊙ T_hat_{1,k-1} + (1 - m_UV_{k-1}) ⊙ T_hat_k
@@ -121,6 +129,8 @@ T_hat_{1,k} = m_UV_{k-1} ⊙ T_hat_{1,k-1} + (1 - m_UV_{k-1}) ⊙ T_hat_k
 - UV space의 texture는 원래 lighting-less이므로, 데이터 분포에서 lighting-less prior를 학습
 
 학습 loss
+
+<img src="../../../docs/assets/papers/texture/Paint3D_eq4.png" alt="논문 Eq. (4)" width="423">
 
 ```
 L = E[ || epsilon - epsilon_theta(z_t, t, c, tau_p(O)) ||^2 ]

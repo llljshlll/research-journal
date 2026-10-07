@@ -3,6 +3,8 @@
 > **한 줄 요약** : Image → UV completion  
 > in-the-wild 얼굴 이미지에서 추출한 incomplete UV texture를 identity condition으로 LDM(Latent Diffusion Model)에 넣어, BFM(Basel Face Model) 기반 UV texture를 생성 (plug-and-play texture generator)
 
+<img src="../../../docs/assets/papers/texture/UV-IDM_fig1.png" alt="논문 Fig. 1 : 입력 얼굴, 생성 texture로 렌더링한 결과, UV texture, vertex에 mapping한 color" width="800">
+
 ## 1. 배경
 
 **목표**
@@ -82,6 +84,8 @@ Deep3D 기반의 고전적 rendering 기법 5단계
 - UV texture `x`를 encoder `E`로 저차원 latent `z = E(x) ∈ R^(32×32×4)`로 압축, decoder `D`로 복원
 - UV pixel space보다 latent space에서 likelihood 기반 생성 모델을 학습하는 것이 효율적이며 메모리 절약
 
+<img src="../../../docs/assets/papers/texture/UV-IDM_eq1.png" alt="논문 Eq. (1)" width="421">
+
 ```
 L_VAE = lambda_kl · L_KL + lambda_gan · L_GAN + lambda_lpips · L_LPIPS
 ```
@@ -103,6 +107,8 @@ L_VAE = lambda_kl · L_KL + lambda_gan · L_GAN + lambda_lpips · L_LPIPS
 - 추론 시 BiSeNet mask `M_seg`가 hair와 glasses 영역을 incomplete texture에서 제외
 
 #### LDM 학습
+
+<img src="../../../docs/assets/papers/texture/UV-IDM_eq2.png" alt="논문 Eq. (2)" width="423">
 
 ```
 L_LDM = E[ || epsilon - epsilon_theta(z_t, t, tau_theta(y)) ||^2 ]

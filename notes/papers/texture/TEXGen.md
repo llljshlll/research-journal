@@ -2,6 +2,8 @@
 
 > **한 줄 요약** : 3D mesh의 UV texture map 자체를 diffusion model이 직접 생성하도록 학습한 모델 (feed-forward, test-time optimization 없음)
 
+<img src="../../../docs/assets/papers/texture/TEXGen_fig1.png" alt="논문 Fig. 1 : TEXGen이 생성한 texture를 입힌 3D mesh gallery와 bird 모델의 texture map" width="800">
+
 ## 1. 배경
 
 **기존 문제**
@@ -87,6 +89,10 @@
 
 **Condition Modulation 수식**
 
+<img src="../../../docs/assets/papers/texture/TEXGen_mod.png" alt="논문 본문 수식 (modulation, gated scale, fusion) - TEXGen_mod" width="405">
+
+<img src="../../../docs/assets/papers/texture/TEXGen_fout.png" alt="논문 본문 수식 (modulation, gated scale, fusion) - TEXGen_fout" width="417">
+
 ```
 f_mod  = (1 + gamma) · f_in + beta       # scale and shift
 f_fuse = alpha · f_out + f_skip          # gated scale
@@ -105,6 +111,12 @@ f_out  = f_uv + alpha_point · f_point    # 최종 fusion (UV branch + point bra
 - 학습 중 text embedding과 image embedding을 확률 `p = 0.2`로 drop하여 CFG (Classifier-Free Guidance) 사용 가능하게 구성
 
 **Loss**
+
+<img src="../../../docs/assets/papers/texture/TEXGen_eq2.png" alt="논문 Eq. (2)~(4) - TEXGen_eq2" width="316">
+
+<img src="../../../docs/assets/papers/texture/TEXGen_eq3.png" alt="논문 Eq. (2)~(4) - TEXGen_eq3" width="327">
+
+<img src="../../../docs/assets/papers/texture/TEXGen_eq4.png" alt="논문 Eq. (2)~(4) - TEXGen_eq4" width="311">
 
 ```
 v_t      = sqrt(alpha_bar_t) · epsilon - sqrt(1 - alpha_bar_t) · x_0
