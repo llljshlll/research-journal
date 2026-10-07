@@ -46,20 +46,12 @@
 
 <img src="../../../docs/assets/papers/texture/UltrAvatar_eq1.png" alt="논문 Eq. (1)" width="392">
 
-```
-min E[ || epsilon - epsilon_theta(z_t, t, tau(y)) ||^2 ]
-```
-
 - U-Net의 각 layer = residual block + self-attention block + cross-attention block
   - residual block의 출력 : res-feature `f_t^l` (생성 이미지의 내용(RGB detail)에 기여)
   - self-attention의 입력 `phi_t^(l-1) + f_t^l`에서 query `q_t^l`, key `k_t^l`, value `v_t^l` 생성 (전체 구조/layout 정보)
 - Classifier-Free Guidance
 
 <img src="../../../docs/assets/papers/texture/UltrAvatar_eq2.png" alt="논문 Eq. (2)" width="423">
-
-```
-eps_tilde = omega · eps_theta(z_t, t, tau(y)) + (1 - omega) · eps_theta(z_t, t, null)
-```
 
 ### 2-2. Diffuse Color Extraction (DCE) via Diffusion Features
 
@@ -136,11 +128,6 @@ eps_tilde = omega · eps_theta(z_t, t, tau(y)) + (1 - omega) · eps_theta(z_t, t
 
 <img src="../../../docs/assets/papers/texture/UltrAvatar_eq3.png" alt="논문 Eq. (3)" width="438">
 
-```
-G_P = omega_photo · || V_d ⊙ ( R(M, D_d(z_t), c*) - I_d ) ||^2
-    + omega_lpips · L_lpips( V_d ⊙ R(M, D_d(z_t), c*), V_d ⊙ I_d )
-```
-
 - `R(·)` : differentiable renderer, `V_d` : rendering된 얼굴의 visible part mask, `D_d(z_t)` : 시점 `t`의 diffuse color texture map
 
 **Edge Guidance**
@@ -148,20 +135,11 @@ G_P = omega_photo · || V_d ⊙ ( R(M, D_d(z_t), c*) - I_d ) ||^2
 
 <img src="../../../docs/assets/papers/texture/UltrAvatar_eq4.png" alt="논문 Eq. (4)" width="427">
 
-```
-G_E = || V_d ⊙ ( C(R(M, D(z_t), c*)) - C(I_d) ) ||^2
-```
-
 - `C(·)` : canny edge detection
 
 **통합** : 두 guidance의 gradient를 classifier-free guidance sampling에 추가
 
 <img src="../../../docs/assets/papers/texture/UltrAvatar_eq5.png" alt="논문 Eq. (5)" width="421">
-
-```
-eps_tilde = omega · eps_theta(z_t, t, tau(y)) + (1 - omega) · eps_theta(z_t, t, null)
-          + omega_p · grad_z G_P + omega_e · grad_z G_E
-```
 
 **하이퍼파라미터** : `T = 200`, `N = 90`, `omega = 7.5`, `omega_p = 0.1`, `omega_photo = 0.4`, `omega_lpips = 0.6`, `omega_e = 0.05`
 
@@ -179,6 +157,10 @@ eps_tilde = omega · eps_theta(z_t, t, tau(y)) + (1 - omega) · eps_theta(z_t, t
   - PanoHead : prompt마다 SDXL로 5장 생성하여 총 200장, 각 50 view → 10k장
 - 속도 : text prompt로 2분 이내 (DreamFace는 5분), A6000 1장
 - metric : FID, KID (CLIPFace와 같이 배경, 눈, 입 내부를 제외한 FFHQ 이미지와 비교), text-to-avatar는 CLIP score 추가 (ViT-B/16과 ViT-L/14의 평균)
+
+**생성 결과**
+
+<img src="../../../docs/assets/papers/texture/UltrAvatar_fig5.png" alt="논문 Fig. 5 : 무작위 identity와 유명인 생성 결과 (다양한 environment map에서 relighting)" width="692">
 
 **정량 결과**
 
@@ -200,15 +182,25 @@ eps_tilde = omega · eps_theta(z_t, t, tau(y)) + (1 - omega) · eps_theta(z_t, t
 - PanoHead(image-to-avatar) : 정면 rendering은 우수하나 pre-processing 추정 정확도에 크게 의존, NeRF 기반이라 relighting에 한계
 - GPT-4V를 이용한 평가 : 5점 Likert 척도로 photo-realism, artifact 최소화, skin texture 품질, text prompt 일치, 선명도를 평가, UltrAvatar가 전반적으로 우수
 
+<img src="../../../docs/assets/papers/texture/UltrAvatar_fig7.png" alt="논문 Fig. 7 : DreamFace와의 비교 (극단적인 prompt)" width="311">
+
+<img src="../../../docs/assets/papers/texture/UltrAvatar_fig8.png" alt="논문 Fig. 8 : GPT-4V를 이용한 정성 평가" width="314">
+
 **Ablation : guidance** (Photometric과 Edge)
 - G_P, G_E 모두 없는 경우, G_P만 있는 경우, 둘 다 있는 경우 비교
 - photometric guidance : 생성 texture와 원본 이미지의 유사도 강화
 - edge guidance : 생성 color texture의 detail 강화
 
+**Ablation 결과**
+
+<img src="../../../docs/assets/papers/texture/UltrAvatar_fig6.png" alt="논문 Fig. 6 : AGT-DM의 guidance 분석 (G_P, G_E 없음 / G_P만 / G_P + G_E)" width="328">
+
 **기타 결과**
 - Out-of-domain 생성 : 애니메이션/만화 캐릭터, 비인간 avatar도 생성 가능
 - Animation과 editing : FLAME 기반이라 expression과 pose를 바꿔 animation 가능, AGT-DM의 text prompt로 texture 편집 가능
 - 서로 다른 조명 조건에서 relighting한 avatar를 정확히 rendering, AGT-DM이 관측/비관측 영역의 일관성을 강제하여 다른 각도에서도 artifact 없이 사실적
+
+<img src="../../../docs/assets/papers/texture/UltrAvatar_fig9.png" alt="논문 Fig. 9 : out-of-domain avatar 생성 결과 (애니메이션/만화 캐릭터)" width="359">
 
 ## 4. 참고
 

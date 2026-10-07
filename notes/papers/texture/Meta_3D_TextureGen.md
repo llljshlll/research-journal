@@ -75,10 +75,6 @@
 
 <img src="../../../docs/assets/papers/texture/Meta3D_eq1.png" alt="논문 Eq. (1)" width="362">
 
-```
-I(S, t*) = f(z, t*, P_grid(S), N_grid(S))
-```
-
 - `z` : 각 pixel이 i.i.d. 표준 Gaussian인 2D noise map
 - 실제로는 diffusion step도 condition으로 입력 (수식에서는 생략)
 
@@ -100,12 +96,6 @@ I(S, t*) = f(z, t*, P_grid(S), N_grid(S))
 
 <img src="../../../docs/assets/papers/texture/Meta3D_eq2.png" alt="논문 Eq. (2)" width="457">
 
-```
-phi(I_i, p) = cos( angle( v_i(p), n(I_i, p) ) )
-
-C_UV(p) = ( Σ_j  BP(I_j)(p) ⊙ BP( phi(I_j, p)^alpha ) ) / ( Σ_j BP( phi(I_j, p)^alpha ) + epsilon )
-```
-
 - `v_i(p)` : camera `i`에서 pixel `p`로의 시선 방향, `n` : 해당 pixel의 normal
 - `BP` : backprojection 연산, `epsilon` : 0 나눗셈 방지용 작은 상수
 - `n = 4`(생성 view 수), `alpha = 6` (모든 실험 공통)
@@ -118,10 +108,6 @@ C_UV(p) = ( Σ_j  BP(I_j)(p) ⊙ BP( phi(I_j, p)^alpha ) ) / ( Σ_j BP( phi(I_j,
 - 입력 : blending된 partial texture `C_UV`, inpainting mask `M_UV`, position UV map `P_UV`, normal UV map `N_UV`
 
 <img src="../../../docs/assets/papers/texture/Meta3D_eq3.png" alt="논문 Eq. (3)" width="457">
-
-```
-Texture(S, t*) = g(z, C_UV(S, t*), M_UV(S), P_UV(S), N_UV(S))
-```
 
 ### 2-4. Texture enhancement network (선택)
 
@@ -156,6 +142,14 @@ Texture(S, t*) = g(z, C_UV(S, t*), M_UV(S), P_UV(S), N_UV(S))
 
 **비교 대상** : TEXTure, Text2Tex, SyncMVD, Paint3D, Meshy 3.0(상용)
 
+**정성 비교**
+
+<img src="../../../docs/assets/papers/texture/Meta3D_fig4.png" alt="논문 Fig. 4 : local consistency, 품질, text 일치 비교" width="703">
+
+<img src="../../../docs/assets/papers/texture/Meta3D_fig5.png" alt="논문 Fig. 5 : global consistency 비교 (Janus effect)" width="708">
+
+<img src="../../../docs/assets/papers/texture/Meta3D_fig6.png" alt="논문 Fig. 6 : 생성된 UV texture map 비교 (artist 제작 texture와 비교)" width="645">
+
 **정량 결과**
 
 | Method | Preference ↑ | Artifacts ↑ | FID ↓ | KID (×10⁻³) ↓ | Runtime ↓ |
@@ -186,9 +180,13 @@ Texture(S, t*) = g(z, C_UV(S, t*), M_UV(S), P_UV(S), N_UV(S))
 | (d) 제안 방법 | - |
 | (e) 제안 방법 + texture enhancement | 4k 해상도에서 더 세밀한 detail |
 
+<img src="../../../docs/assets/papers/texture/Meta3D_fig8.png" alt="논문 Fig. 8 : ablation 정성 결과 ((a) w/o stage I, (b) w/o stage II, (c) mean blending, (d) Ours, (e) Ours + SR)" width="697">
+
 **기타**
 - 다양한 prompt(현실적인 것부터 매우 환상적인 것까지) 생성 가능
 - 생성한 texture로 VR 환경(현실적, stylized)을 구성하는 응용 시연
+
+<img src="../../../docs/assets/papers/texture/Meta3D_fig7.png" alt="논문 Fig. 7 : prompt 다양성 (같은 llama model에 33개 texture, voxel model에 11개 texture)" width="697">
 
 ## 4. 한계
 

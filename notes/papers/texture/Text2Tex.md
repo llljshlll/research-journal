@@ -37,10 +37,6 @@
 
 <img src="../../../docs/assets/papers/texture/Text2Tex_eq4.png" alt="논문 Eq. (4)" width="337">
 
-```
-z_hat = z_hat ⊙ M + z_t ⊙ (1 - M)
-```
-
 - `z_hat` : denoise된 latent 추정
 - `z_t` : noise가 추가된 기존 latent
 - `M` : generation mask (1인 영역은 새로 생성, 0인 영역은 기존 내용 유지)
@@ -91,14 +87,12 @@ denoising strength `γ` (0 < γ ≤ 1)
 
 <img src="../../../docs/assets/papers/texture/Text2Tex_viewheat.png" alt="논문 view heat 수식 (본문 내 수식)" width="438">
 
-```
-h_i = (1 / N_p) · Σ_k w_k
-```
-
 - `N_p` : background가 아닌 pixel 수
 - `w_k` : generation mask 영역별 가중치
 - Update 영역의 `w_k`를 Keep 영역보다 크게 설정하여, update 면적이 큰 view 우선 선택
 - 즉 view heat는 현재 보이는 면적 대비 Update 영역의 정규화된 면적
+
+<img src="../../../docs/assets/papers/texture/Text2Tex_fig4.png" alt="논문 Fig. 4 : refinement 단계에서 update 영역이 가장 큰 view를 자동 선택하는 과정" width="342">
 
 ### 정리
 
@@ -127,6 +121,10 @@ h_i = (1 / N_p) · Σ_k w_k
 
 - FID 19%, KID 26% 개선
 
+**정성 비교 (Objaverse)**
+
+<img src="../../../docs/assets/papers/texture/Text2Tex_fig5.png" alt="논문 Fig. 5 : Objaverse에서의 정성 비교 (CLIPMesh, Text2Mesh, Latent-Paint, Ours, Objaverse GT)" width="697">
+
 **정량 결과 (ShapeNet car)**
 - Texturify(GAN 기반 SOTA) : FID 59.55 / KID 4.97
 - Text2Tex : FID 46.91 / KID 4.35
@@ -142,12 +140,16 @@ h_i = (1 / N_p) · Σ_k w_k
 | ✓ | ✓ | - | 38.19 | 9.11 |
 | ✓ | ✓ | ✓ | 37.09 | 8.78 |
 
+<img src="../../../docs/assets/papers/texture/Text2Tex_fig7.png" alt="논문 Fig. 7 : generation 단계 ablation (Depth2Img → + inpainting → + update)" width="342">
+
 **Ablation (refinement view 수)**
 
 | view 수 | 0 | 5 | 10 | 15 | 20 |
 |---|---|---|---|---|---|
 | FID ↓ | 37.09 | 36.67 | 36.39 | 35.98 | 35.68 |
 | KID (×10⁻³) ↓ | 8.78 | 8.31 | 8.12 | 7.98 | 7.74 |
+
+<img src="../../../docs/assets/papers/texture/Text2Tex_fig8.png" alt="논문 Fig. 8 : refinement view 수에 따른 변화 (없음, 10개, 20개)" width="345">
 
 ## 4. 한계
 

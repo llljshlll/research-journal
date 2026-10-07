@@ -77,6 +77,8 @@ Deep3D 기반의 고전적 rendering 기법 5단계
 - FFHQ-UV가 제공한 정규화 이미지 50K 세트 추가
 - 최종 약 80K의 BFM 기반 UV texture (256×256) → BFM-UV dataset
 
+<img src="../../../docs/assets/papers/texture/UV-IDM_fig3.png" alt="논문 Fig. 3 : 생성된 BFM-UV dataset 예시" width="329">
+
 ### 2-2. Identity-Conditioned Facial Texture Generator (LDM 기반)
 
 #### VAE (UV texture용 perceptual compression)
@@ -85,10 +87,6 @@ Deep3D 기반의 고전적 rendering 기법 5단계
 - UV pixel space보다 latent space에서 likelihood 기반 생성 모델을 학습하는 것이 효율적이며 메모리 절약
 
 <img src="../../../docs/assets/papers/texture/UV-IDM_eq1.png" alt="논문 Eq. (1)" width="421">
-
-```
-L_VAE = lambda_kl · L_KL + lambda_gan · L_GAN + lambda_lpips · L_LPIPS
-```
 
 - texture VAE는 UV texture의 detail을 잘 포착하여 다른 3D face reconstruction 작업의 pre-train model로도 활용 가능
 
@@ -110,10 +108,6 @@ L_VAE = lambda_kl · L_KL + lambda_gan · L_GAN + lambda_lpips · L_LPIPS
 
 <img src="../../../docs/assets/papers/texture/UV-IDM_eq2.png" alt="논문 Eq. (2)" width="423">
 
-```
-L_LDM = E[ || epsilon - epsilon_theta(z_t, t, tau_theta(y)) ||^2 ]
-```
-
 - `x` : 완성된 UV texture(ground truth), `y` : incomplete UV condition, `t` : `{1, ..., T}`에서 균등 샘플링
 - 최종 sampling된 latent는 `D`로 UV texture space에 decoding
 - 학습 data 구성 : hair가 있는 원본 이미지를 입력으로, hair 제거 후의 texture를 정답으로 쌍을 이루게 하여 hair의 영향을 완화
@@ -132,6 +126,14 @@ L_LDM = E[ || epsilon - epsilon_theta(z_t, t, tau_theta(y)) ||^2 ]
 - 평가 방법 : 생성한 UV texture를 정렬된 얼굴 이미지(정답)로 다시 rendering하여 비교
 - metric : LPIPS(복원 정확도), FID(시각 품질), CSIM(face identity embedding의 cosine similarity, identity 유지)
 - 비교 방식 : 기존 방법(Deep3D, HRN)의 texture를 UV-IDM으로 교체 (D-UV-IDM : Deep3D 기반, H-UV-IDM : HRN 기반)
+
+**정성 비교**
+
+<img src="../../../docs/assets/papers/texture/UV-IDM_fig5.png" alt="논문 Fig. 5 : 서로 다른 방법의 rendering 결과 비교 (Deep3D, D-UV-IDM, H-UV-IDM, HRN, FFHQ-UV)" width="342">
+
+<img src="../../../docs/assets/papers/texture/UV-IDM_fig6.png" alt="논문 Fig. 6 : in-the-wild 이미지에서 생성한 texture 비교 (UV-IDM, HRN, OSTeC, NextFace)" width="339">
+
+<img src="../../../docs/assets/papers/texture/UV-IDM_fig7.png" alt="논문 Fig. 7 : iterative optimization 방법의 occlusion overfitting (모자) vs D-UV-IDM" width="703">
 
 **정량 결과 (rendering 품질)**
 
@@ -173,6 +175,8 @@ L_LDM = E[ || epsilon - epsilon_theta(z_t, t, tau_theta(y)) ||^2 ]
 - 원본 이미지를 condition으로 넣어도 극단적 pose나 가림이 없으면 현실적인 texture 생성 가능
 - 과장된 pose와 occlusion(머리카락)이 있으면, Incomplete UV를 condition으로 쓴 UV-IDM이 가려진 영역을 더 잘 복원하고 pose 변화에도 robust
 - CelebAMask-HQ에서는 원본 이미지 condition의 FID와 CSIM이 더 우수하나, AFLW2000(복잡한 환경)에서는 incomplete UV condition이 comparable한 품질에 더 높은 identity consistency
+
+<img src="../../../docs/assets/papers/texture/UV-IDM_fig8.png" alt="논문 Fig. 8 : condition ablation의 시각적 예시 (w/o ICM)" width="345">
 
 ## 4. 한계 및 향후 방향
 

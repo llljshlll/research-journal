@@ -90,10 +90,6 @@
 
 <img src="../../../docs/assets/papers/texture/FreeUV_eq1.png" alt="논문 Eq. (1)" width="419">
 
-```
-L_a = E[ || epsilon - epsilon_theta(x_t, t, c_T^w, c_I^uv, c_I^lm) ||^2 ]
-```
-
 - `c_T^w`, `c_I^uv`, `c_I^lm` : 각각 `T_w`, `I_uv`, `I_lm`에서 embedding한 condition
 
 ### 2-3. Structure Network `phi_s` : UV Structure Aligner
@@ -105,10 +101,6 @@ L_a = E[ || epsilon - epsilon_theta(x_t, t, c_T^w, c_I^uv, c_I^lm) ||^2 ]
 - feature 추출기에 CLIP 기반 spatial-aware self-attention 사용 (Stable-Makeup 방식)
 
 <img src="../../../docs/assets/papers/texture/FreeUV_eq2.png" alt="논문 Eq. (2)" width="390">
-
-```
-L_s = E[ || epsilon - epsilon_theta(x_t, t, c_I^m, c_T^uv) ||^2 ]
-```
 
 **attention 종류를 mapping마다 다르게 선택하는 이유 (가설)**
 - UV-to-2D : 해상도 차이로 UV texture에서 pixel을 선택적으로 샘플링하는 downsampling → 필요한 feature를 선택하는 channel attention
@@ -156,16 +148,28 @@ L_s = E[ || epsilon - epsilon_theta(x_t, t, c_I^m, c_T^uv) ||^2 ]
 - Makeup Prior Models 대비 eyeliner 같은 화장 detail 보존
 - 입력의 왜곡, 오류, 큰 결측이 있어도 사실적인 UV texture 복원 (Flaw-Tolerant Facial Detail Extractor 덕분)
 
+<img src="../../../docs/assets/papers/texture/FreeUV_fig4.png" alt="논문 Fig. 4 : 3D face reconstruction 결과 비교 (복원한 UV texture를 rendering하여 원본 위에 overlay)" width="342">
+
+<img src="../../../docs/assets/papers/texture/FreeUV_fig5.png" alt="논문 Fig. 5 : makeup 특화 방법과의 비교" width="342">
+
+<img src="../../../docs/assets/papers/texture/FreeUV_fig6.png" alt="논문 Fig. 6 : UV texture 복원 비교 (FLAME, FFHQ-UV, HRN, UV-IDM)" width="342">
+
 **Robustness**
 - 정면 이미지의 unwrapped texture 일부를 가려 partial view를 시뮬레이션해도, 보이는 부분의 detail은 유지하고 가려진 부분은 색상과 연결이 자연스럽게 채워짐
 - 극단적 occlusion에서도 그럴듯한 결과
 - 여러 partial view를 batch로 `psi_a`에 입력하면 각 view의 최선의 feature를 통합하여 완전한 정면 view에 가까운 결과 (multi-view stereo, video 기반 texture 복원 가능성)
 
+<img src="../../../docs/assets/papers/texture/FreeUV_fig7.png" alt="논문 Fig. 7 : robustness 평가 (partial view, occlusion, multi-view)" width="342">
+
 ## 4. 응용
 
 - **Customized local editing** : 입술, 눈, 수염 같은 특정 부위를 다른 이미지에서 unwrap해 base face의 UV texture에 겹쳐 놓으면, network가 하나의 일관된 texture로 완성
+<img src="../../../docs/assets/papers/texture/FreeUV_fig8.png" alt="논문 Fig. 8 : customized local editing 결과 (입술, 눈, 수염을 base face에 전이)" width="342">
+
 - **Facial feature interpolation** : 두 이미지에서 `psi_a`로 feature를 각각 추출하고 spherical linear interpolation(slerp)으로 섞어 부드럽게 전환 (예 : 3D face aging)
 - **Multi-view texture recovery** : 여러 partial view를 함께 입력
+
+<img src="../../../docs/assets/papers/texture/FreeUV_fig9.png" alt="논문 Fig. 9 : facial feature interpolation 결과 (slerp로 두 이미지 feature 혼합)" width="347">
 
 ## 5. Ablation
 
@@ -178,6 +182,8 @@ L_s = E[ || epsilon - epsilon_theta(x_t, t, c_I^m, c_T^uv) ||^2 ]
 | 1.4 | detail과 자연스러움의 최적 균형 |
 
 - Lab 색 보정을 적용하면 색조가 일관되고 시각 품질 향상
+
+<img src="../../../docs/assets/papers/texture/FreeUV_fig10.png" alt="논문 Fig. 10 : CFG scale과 Lab 색 보정의 효과" width="342">
 
 **Module 선택** (channel attention `ch` vs self-attention `self`)
 
@@ -193,6 +199,8 @@ L_s = E[ || epsilon - epsilon_theta(x_t, t, c_I^m, c_T^uv) ||^2 ]
 - UV-to-2D(in-the-wild)에는 channel attention이 세밀한 detail을 잘 보존, self-attention은 detail이 평활화되어 약간 흐려짐
 - 2D-to-UV(3DMM)에는 self-attention이 3DMM UV layout과의 구조 정렬을 잘 유지, channel attention은 왜곡 유발
 - landmark를 제외하면 detail 손실 (3DMM fitting의 구조 오차 때문)
+
+<img src="../../../docs/assets/papers/texture/FreeUV_fig11.png" alt="논문 Fig. 11 : channel attention과 self-attention 조합별 UV texture 복원 비교" width="342">
 
 **Network 구조 (부록)**
 - `phi_a` 단독 또는 `phi_s` 단독으로는 3DMM UV 구조를 보존하지 못함

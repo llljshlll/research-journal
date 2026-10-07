@@ -55,12 +55,6 @@ LoRA : weight의 update가 낮은 "intrinsic rank"를 가진다는 점을 이용
 
 <img src="../../../docs/assets/papers/texture/TexDreamer_eq1.png" alt="논문 Eq. (1)" width="493">
 
-```
-W_new = W + delta_W = W + B A
-B in R^(d x r),  A in R^(r x k),  r << min(d, k)
-s_tilde = W s + B A s
-```
-
 - 학습 parameter는 `A`와 `B`뿐
 - `A`는 random Gaussian으로, `B`는 0으로 초기화
 - `W s`에 `alpha / r`을 곱해 scale (`alpha`는 `r`에 대한 상수)
@@ -72,10 +66,6 @@ s_tilde = W s + B A s
 - U-Net과 text encoder의 LoRA를 함께 optimization
 
 <img src="../../../docs/assets/papers/texture/TexDreamer_eq2.png" alt="논문 Eq. (2)" width="514">
-
-```
-L1 = E[ || epsilon - phi_unet(z_t, t, phi_t-enc(c)) ||^2 ]
-```
 
 - 학습 data : 3.1절의 sample texture + 해당 prompt `c`
 - 설정
@@ -92,6 +82,8 @@ L1 = E[ || epsilon - phi_unet(z_t, t, phi_t-enc(c)) ||^2 ]
 - 같은 text 입력에 대해 원본 SD의 attention 반응 영역은 무작위, T2UV는 일관되게 학습된 UV 구조에 text를 mapping (원본 SD의 generalization 능력은 유지)
 - 학습 sample 수는 약 100개에서 포화 (FID 기준, 이후 증가해도 개선 미미)
 
+<img src="../../../docs/assets/papers/texture/TexDreamer_fig4.png" alt="논문 Fig. 4 : 원본 SD와 TexDreamer T2UV의 attention map 비교" width="497">
+
 ### 2-3. Image-to-UV (I2UV)
 
 핵심 아이디어 : 서로 다른 구조의 human image와 UV texture를 semantic한 매개체인 textual feature로 연결
@@ -104,10 +96,6 @@ L1 = E[ || epsilon - phi_unet(z_t, t, phi_t-enc(c)) ||^2 ]
 
 <img src="../../../docs/assets/papers/texture/TexDreamer_eq3.png" alt="논문 Eq. (3)" width="485">
 
-```
-f_i2t = phi_i-dec( phi_MLP(f_voken), q )     # f_i2t in R^(77 x 1024)
-```
-
 - `77` : text encoder의 최대 입력 길이 `L`, `1024` : LDM encoder 출력 feature 차원 `d_hat`
 
 **학습**
@@ -116,10 +104,6 @@ f_i2t = phi_i-dec( phi_MLP(f_voken), q )     # f_i2t in R^(77 x 1024)
 - image encoder와 feature translator를 LDM denoise loss로 학습 (T2UV의 LoRA는 고정)
 
 <img src="../../../docs/assets/papers/texture/TexDreamer_eq4.png" alt="논문 Eq. (4)" width="513">
-
-```
-L2 = E[ || epsilon - phi_unet(z_t, t, f_i2t) ||^2 ],   f_i2t = phi_i2t( phi_i-enc(y) )
-```
 
 - 설정 : T2UV와 같은 batch size, 20,000 step, learning rate 1e-5, weight decay 0.01
 - 학습 data : 4.2 million장의 실제 및 합성 human image (3.2절의 ATLAS 합성 렌더링 포함)
@@ -174,6 +158,10 @@ L2 = E[ || epsilon - phi_unet(z_t, t, f_i2t) ||^2 ],   f_i2t = phi_i2t( phi_i-en
   - texture ground truth가 있으므로 MSE(texture 품질)와 CLIP score(text 일관성) 사용
 - 모든 학습은 NVIDIA A100 GPU 1장
 
+**Text-to-texture 정성 비교**
+
+<img src="../../../docs/assets/papers/texture/TexDreamer_fig5.png" alt="논문 Fig. 5 : text 조건 texture 생성의 정성 비교 (Text2Tex, TEXTure, Latent-Paint, Fantasia3D, SMPLitex, Ours)" width="497">
+
 **Text-to-texture 정량 결과**
 
 | Method | GPU (GiB) | Time (min) ↓ | CLIP Score ↑ |
@@ -199,6 +187,10 @@ L2 = E[ || epsilon - phi_unet(z_t, t, f_i2t) ||^2 ],   f_i2t = phi_i2t( phi_i-en
 | Fantasia3D | 2.089 | 1.904 |
 | AvatarCLIP | 1.752 | 1.341 |
 | TexDreamer | 4.019 | 4.244 |
+
+**Image-to-UV 정성 비교**
+
+<img src="../../../docs/assets/papers/texture/TexDreamer_fig7.png" alt="논문 Fig. 7 : image 조건 UV 생성의 정성 비교 (Texformer, SMPLitex, Ours)" width="497">
 
 **Image-to-UV 정량 결과** (ATLAS test set에서 무작위 2 frame 입력)
 
@@ -231,6 +223,12 @@ L2 = E[ || epsilon - phi_unet(z_t, t, f_i2t) ||^2 ],   f_i2t = phi_i2t( phi_i-en
 - **Texture editing** : text로 의상 종류(상의/하의), 색, 액세서리 등 수정 가능 (identity 유지, 빠른 virtual try-on 가능성)
 - **Dressed avatar texturing** : text-to-3D avatar 방법(TADA)이 만든 복잡한 mesh에 생성 texture 적용
   - mesh 초기화 과정을 수정하여 원래 UV 정보를 유지하면서 mesh를 조밀하게 만듦
+
+**응용 결과**
+
+<img src="../../../docs/assets/papers/texture/TexDreamer_fig6.png" alt="논문 Fig. 6 : (왼쪽) AvatarCLIP, AvatarCraft와의 비교, (오른쪽) text를 이용한 texture 편집" width="497">
+
+<img src="../../../docs/assets/papers/texture/TexDreamer_fig8.png" alt="논문 Fig. 8 : 복잡한 dressed avatar에 TexDreamer texture를 적용한 결과 (TADA 사용)" width="370">
 
 ## 5. 한계
 

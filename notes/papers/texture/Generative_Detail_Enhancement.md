@@ -91,12 +91,6 @@ Stable Diffusion 1.5 기반의 공개된 ControlNet Tile + ControlNet Normal 사
 
 <img src="../../../docs/assets/papers/texture/Detail_Enhancement_noise.png" alt="논문 본문 수식 (분산 정규화)" width="448">
 
-```
-noise_pixel = Σ_i (f_i · A_i) / sqrt( Σ_i A_i^2 · (1 + Cov_i) )
-Cov_i       = max(A_texel / A_i - 1, 0)
-A_texel     = 1024^-2
-```
-
 - `f_i` : subpixel의 noise 값, `A_i` : projection된 subpixel 면적
 - `Cov_i` : 같은 noise 값이 중복 계산되는 정도를 추정하는 공분산 항
 - 안전장치 : noise texture가 극단적으로 확대되어 한 texel이 여러 pixel에 걸치는 경우(UV 누락/퇴화 시 발생), 독립 white noise와 부드럽게 blending
@@ -110,20 +104,12 @@ A_texel     = 1024^-2
 
 <img src="../../../docs/assets/papers/texture/Detail_Enhancement_eq1.png" alt="Attention 수식" width="350">
 
-```
-Attention(Q, K, V) = softmax(Q K^T / sqrt(d_k)) V
-```
-
 - self-attention의 `Q K^T`는 `N × N` score matrix (`N` : 전체 latent pixel 수)
 - 항목 `[i, j]`는 latent pixel `i`가 `j`에 attend하는 정도
 
 bias를 추가한 attention 수식 (논문 Eq. 2)
 
 <img src="../../../docs/assets/papers/texture/Detail_Enhancement_eq2.png" alt="논문 Eq. (2)" width="377">
-
-```
-Attention(Q, K, V) = softmax((Q K^T + B) / sqrt(d_k)) V
-```
 
 - 같은 3D surface를 바라보는 latent pixel pair (i, j)에 `B[i, j] = w`를 추가하여 서로 더 강하게 attention하도록 유도
 - 대응 관계가 없는 pair는 `B[i, j] = 0`
@@ -194,13 +180,25 @@ Attention(Q, K, V) = softmax((Q K^T + B) / sqrt(d_k)) V
 - 위 방법들은 material을 처음부터 생성하나, 본 논문은 기존 material의 enhancement가 목적이므로 입력 asset에 더 충실
 - Material upscaling 연구(Gauthier et al.)는 flat geometry에 한정되어 object geometry에 맞는 detail 합성 불가
 
+**기존 방법과의 정성 비교**
+
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig5.png" alt="논문 Fig. 5 : Kettle("Rusty scratched kettle")에서 기존 방법과의 비교" width="353">
+
 **Ablation** : 아래 순서로 view consistency 향상
 1. ControlNet tile만 사용 : appearance는 바뀌나 view consistency 부족
 2. + view-correlated noise : view 간 detail 존재 여부는 맞춰지나 일부 misalignment 잔존
 3. + attention bias (full model) : consistency 추가 향상
 
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig8.png" alt="논문 Fig. 8 : 구성 요소를 하나씩 추가한 ablation (ControlNet tile → view-correlated noise → attention bias)" width="717">
+
 **View consistency와 inverse rendering의 관계**
 - 같은 surface에 대해 view마다 다른 detail이 나오면, inverse rendering 결과가 겹쳐 쌓이거나 수렴 실패
+
+**결과 예시**
+
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig9.png" alt="논문 Fig. 9 : multi-view visual prompting 유무와 두 기법에 따른 inverse rendering 결과 비교" width="717">
+
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig10.png" alt="논문 Fig. 10 : 전체 pipeline 결과 (conditioning render, diffusion 결과, 복원된 material, albedo/normal/roughness texture)" width="717">
 
 ## 4. 한계 및 향후 방향
 

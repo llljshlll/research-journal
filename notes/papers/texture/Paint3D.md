@@ -59,28 +59,16 @@ T = P(M, c) = F(C(M, c))
 
 <img src="../../../docs/assets/papers/texture/Paint3D_eq1.png" alt="논문 Eq. (1)" width="309">
 
-```
-I_1 = D(z, c, d_1 ; tau_c, tau_d)
-```
-
 - `z` : 랜덤 초기화된 latent, `d_1` : 첫 view의 depth map
 
 **이후 view** : 이미 칠해진 영역은 유지하고 비어 있는 영역만 inpainting
 
 <img src="../../../docs/assets/papers/texture/Paint3D_eq2.png" alt="논문 Eq. (2)" width="341">
 
-```
-I_k = D(I_hat_k, m_k, c, d_k ; tau_i, tau_c, tau_d)
-```
-
 - `I_hat_k` : 현재 view에서 렌더링한 부분 채색 RGB 이미지, `m_k` : 아직 칠해지지 않은 영역의 mask
 - 현재 view의 texture를 UV에 합칠 때는 기존 영역 유지, 빈 영역만 갱신
 
 <img src="../../../docs/assets/papers/texture/Paint3D_eq3.png" alt="논문 Eq. (3)" width="412">
-
-```
-T_hat_{1,k} = m_UV_{k-1} ⊙ T_hat_{1,k-1} + (1 - m_UV_{k-1}) ⊙ T_hat_k
-```
 
 - `m_UV_{k-1}` : 이전 단계까지 UV에서 칠해진 영역의 mask
 
@@ -132,10 +120,6 @@ T_hat_{1,k} = m_UV_{k-1} ⊙ T_hat_{1,k-1} + (1 - m_UV_{k-1}) ⊙ T_hat_k
 
 <img src="../../../docs/assets/papers/texture/Paint3D_eq4.png" alt="논문 Eq. (4)" width="423">
 
-```
-L = E[ || epsilon - epsilon_theta(z_t, t, c, tau_p(O)) ||^2 ]
-```
-
 - `T` : 기존 UV texture, `O` : UV에 XYZ를 rasterize한 position map (mesh 위 3D 위치 표현)
 - (T, O) pair를 만들어 `T`를 ground truth target, `O`를 condition으로 사용
 
@@ -148,11 +132,9 @@ L = E[ || epsilon - epsilon_theta(z_t, t, c, tau_p(O)) ||^2 ]
 - hole 부분에 대해서만 동작
 - UV space에서 수행하므로 occlusion 문제 없음
 
-<img src="../../../docs/assets/papers/texture/Point3D_eq5.png" alt="UV Inpainting 수식" width="400">
+<img src="../../../docs/assets/papers/texture/Paint3D_fig8.png" alt="논문 Fig. 8 : UV Inpainting의 효과 (projection이 닿지 않는 blind spot의 hole 채움)" width="347">
 
-```
-T_inpainting = D(T_hat, m_UV, c, O ; tau_i, tau_c, tau_p)
-```
+<img src="../../../docs/assets/papers/texture/Point3D_eq5.png" alt="UV Inpainting 수식" width="400">
 
 입력 항목
 1. `T_hat` : 앞 단계에서 생성한 coarse texture
@@ -170,11 +152,9 @@ T_inpainting = D(T_hat, m_UV, c, O ; tau_i, tau_c, tau_p)
 - UV Inpainting과 달리 mask 입력 없음
 - 기존 texture detail을 강화하고, monochromatic 영역에는 새로운 texture까지 생성 가능
 
-<img src="../../../docs/assets/papers/texture/Point3D_eq6.png" alt="UVHD 수식" width="350">
+<img src="../../../docs/assets/papers/texture/Paint3D_fig9.png" alt="논문 Fig. 9 : UVHD의 효과 (기존 detail 강화, monochromatic 영역에 새 texture 생성)" width="347">
 
-```
-T_tiling = D(T_hat, c, O ; tau_t, tau_c, tau_p)
-```
+<img src="../../../docs/assets/papers/texture/Point3D_eq6.png" alt="UVHD 수식" width="350">
 
 (논문 표기 그대로 `T_tiling`, UVHD의 출력)
 
@@ -212,12 +192,20 @@ T_tiling = D(T_hat, c, O ; tau_t, tau_c, tau_p)
 - user study : 30명, mesh 60개, 1~5점 척도
 - 모든 baseline은 pre-illumination texture를 생성하여 relighting 시 부적절한 그림자 발생
 
+**Text-to-texture 정성 비교**
+
+<img src="../../../docs/assets/papers/texture/Paint3D_fig4.png" alt="논문 Fig. 4 : text prompt 조건 texture 생성의 정성 비교 (Latent-Paint, TEXTure, Text2Tex, Paint3D)" width="700">
+
 **Image-to-texture 정량 결과**
 
 | Method | FID ↓ | KID (×10⁻³) ↓ | Overall Quality ↑ | Image Fidelity ↑ |
 |---|---|---|---|---|
 | TEXTure | 40.83 | 9.76 | 3.56 | 3.73 |
 | Paint3D | 26.86 | 4.94 | 4.71 | 4.89 |
+
+**Image-to-texture 정성 비교**
+
+<img src="../../../docs/assets/papers/texture/Paint3D_fig5.png" alt="논문 Fig. 5 : image prompt 조건 texture 생성의 정성 비교 (TEXTure, Paint3D)" width="339">
 
 **Ablation : 모듈별 효과**
 
@@ -232,6 +220,12 @@ T_tiling = D(T_hat, c, O ; tau_t, tau_c, tau_p)
 - coarse stage 없이 UV space에서 바로 생성하면, texture fragment가 분리되어 있어 semantic confusion 발생
 - refinement stage 없으면 texture가 pre-illuminated 상태로 남음
 - UV Inpainting을 bilinear interpolation으로 대체하면 성능 저하
+
+**Ablation 정성 결과**
+
+<img src="../../../docs/assets/papers/texture/Paint3D_fig6.png" alt="논문 Fig. 6 : coarse stage의 효과 ((a) 없음, (b) 있음)" width="336">
+
+<img src="../../../docs/assets/papers/texture/Paint3D_fig7.png" alt="논문 Fig. 7 : refinement stage의 효과 ((a) 없음, (b) 있음, 조명 제거)" width="336">
 
 ## 4. 한계
 
