@@ -12,7 +12,7 @@
 **목표**
 - 2D diffusion의 강력한 생성 능력을 사용하면서, 여러 시점에서 일관되고 고품질인 3D texture를 생성하는 것
 
-![Paint3D 전체 pipeline (Coarse Stage → Refinement Stage)](../../../docs/assets/papers/texture/Point3D_fig2.png)
+<img src="../../../docs/assets/papers/texture/Point3D_fig2.png" alt="Paint3D 전체 pipeline (Coarse Stage → Refinement Stage)" width="800">
 
 ## 2. 방법론
 
@@ -35,7 +35,7 @@
 1. 여러 view에서 생성하는 과정에서, occluded region에 texture hole 발생
 2. 2D diffusion 이미지에 그림자, 하이라이트 같은 조명 정보가 이미 포함됨
 
-![조명 정보가 포함된 texture(pre illumination)와 제거된 texture(free illumination)의 비교](../../../docs/assets/papers/texture/Point3D_fig3.png)
+<img src="../../../docs/assets/papers/texture/Point3D_fig3.png" alt="조명 정보가 포함된 texture(pre illumination)와 제거된 texture(free illumination)의 비교" width="700">
 
 두 문제를 해결하기 위해 아래 두 모델로 texture refinement 수행
 
@@ -49,7 +49,7 @@
 - (T, O) pair를 만들어 `T`를 ground truth target, `O`를 condition으로 사용
 - hole 부분에 대해서만 동작
 
-![UV Inpainting 수식](../../../docs/assets/papers/texture/Point3D_eq5.png)
+<img src="../../../docs/assets/papers/texture/Point3D_eq5.png" alt="UV Inpainting 수식" width="400">
 
 ```
 T_inpainting = D(T_hat, m_UV, c, O ; tau_i, tau_c, tau_p)
@@ -72,7 +72,7 @@ T_inpainting = D(T_hat, m_UV, c, O ; tau_i, tau_c, tau_p)
 - 학습 target 자체가 illumination-free UV texture이므로, diffusion이 해당 UV texture distribution을 학습하면 lighting-less prior 확보 가능하다는 논리
 - UV Inpainting과 달리 mask 입력 없음
 
-![UVHD 수식](../../../docs/assets/papers/texture/Point3D_eq6.png)
+<img src="../../../docs/assets/papers/texture/Point3D_eq6.png" alt="UVHD 수식" width="350">
 
 ```
 T_tiling = D(T_hat, c, O ; tau_t, tau_c, tau_p)

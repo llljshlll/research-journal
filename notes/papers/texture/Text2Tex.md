@@ -14,7 +14,7 @@
 
 ## 2. 방법론
 
-![Text2Tex 전체 pipeline (Generation → Refinement)](../../../docs/assets/papers/texture/Text2Tex_Fig2.png)
+<img src="../../../docs/assets/papers/texture/Text2Tex_Fig2.png" alt="Text2Tex 전체 pipeline (Generation → Refinement)" width="800">
 
 ### 2-1. Depth-aware Diffusion
 
@@ -34,7 +34,7 @@
 | Keep | 이미 좋은 시점에서 생성된 영역 | 그대로 유지 |
 | Ignore | background | 무시 |
 
-![New / Update / Keep / Ignore 영역 구분](../../../docs/assets/papers/texture/Text2Tex_Fig3.png)
+<img src="../../../docs/assets/papers/texture/Text2Tex_Fig3.png" alt="New / Update / Keep / Ignore 영역 구분" width="450">
 
 예시
 - 정면에서 잘 보이는 부분 → Keep

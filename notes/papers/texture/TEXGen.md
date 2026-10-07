@@ -13,7 +13,7 @@
 **목표**
 - Mesh + text + single-view image를 입력받아 전체 1024×1024 UV texture map을 직접 생성하는 general-purpose texture diffusion model 구축
 
-![TEXGen 학습 overview 및 Hybrid block 구조](../../../docs/assets/papers/texture/TEXGen_fig3.png)
+<img src="../../../docs/assets/papers/texture/TEXGen_fig3.png" alt="TEXGen 학습 overview 및 Hybrid block 구조" width="650">
 
 ## 2. 방법론
 
@@ -28,7 +28,7 @@
 
 → 해결 : 2D UV space의 high-resolution feature learning + 3D point space의 global consistency 결합
 
-![Triangle mesh와 UV map (UV island 분할 예시)](../../../docs/assets/papers/texture/TEXGen_fig2.png)
+<img src="../../../docs/assets/papers/texture/TEXGen_fig2.png" alt="Triangle mesh와 UV map (UV island 분할 예시)" width="500">
 
 ### 2-2. Model Construction
 
@@ -54,7 +54,7 @@
 
 #### Hybrid 2D-3D Block
 
-![Hybrid block 상세 구조 : (b) 전체 block, (c) UV head block, (d) point block](../../../docs/assets/papers/texture/TEXGen_fig3_hybrid.png)
+<img src="../../../docs/assets/papers/texture/TEXGen_fig3_hybrid.png" alt="Hybrid block 상세 구조 : (b) 전체 block, (c) UV head block, (d) point block" width="800">
 
 1. **UV Head Block** : 입력 UV를 2D convolution block으로 feature 추출 (위 그림 (c) 참고)
 2. **UV → 3D point** : 추출한 feature를 3D point에 mapping

@@ -22,7 +22,7 @@
 
 ### 전체 구조
 
-![Detail Enhancement 전체 pipeline](../../../docs/assets/papers/texture/Detail_Enhancement_fig2.png)
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig2.png" alt="Detail Enhancement 전체 pipeline" width="800">
 
 ### 2-1. Structure-preserving generation : ControlNet
 
@@ -56,7 +56,7 @@ Stable Diffusion 1.5 기반의 공개된 ControlNet Tile + ControlNet Normal 사
 - 해당 논문 : UV space에 공통 Gaussian noise field를 생성하고, 이를 각 camera view로 projection하여 diffusion noise로 사용
   → 같은 3D surface point는 어느 view에서 보이더라도 같은 UV noise source 참조
 
-![UV noise를 camera view로 projection하는 과정](../../../docs/assets/papers/texture/Detail_Enhancement_uv1.png)
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_uv1.png" alt="UV noise를 camera view로 projection하는 과정" width="500">
 
 주의 : material texture에 noise를 넣는 방식이 아니라, UV space를 공통 좌표계로 사용하여 diffusion용 noise field를 정의하는 방식
 
@@ -67,7 +67,7 @@ Stable Diffusion 1.5 기반의 공개된 ControlNet Tile + ControlNet Normal 사
 
 기존 attention 수식
 
-![Attention 수식](../../../docs/assets/papers/texture/Detail_Enhancement_eq1.png)
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_eq1.png" alt="Attention 수식" width="350">
 
 ```
 Attention(Q, K, V) = softmax(Q K^T / sqrt(d_k)) V
@@ -77,7 +77,7 @@ Attention(Q, K, V) = softmax(Q K^T / sqrt(d_k)) V
 - 대응 관계가 없는 pair는 `B[i, j] = 0`
 - geometry와 camera가 이미 알려진 상태이므로, ray tracing + reprojection으로 correspondence를 사전에 계산하여 사용
 
-![Pixel correspondence와 attention bias B](../../../docs/assets/papers/texture/Detail_Enhancement_uv2.png)
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_uv2.png" alt="Pixel correspondence와 attention bias B" width="500">
 
 ### 2-5. Inverse Rendering
 
@@ -93,4 +93,4 @@ Attention(Q, K, V) = softmax(Q K^T / sqrt(d_k)) V
 
 - input으로 lighting을 적용해 렌더링한 RGB를 사용하므로 lighting 정보는 어느 정도 보존된다고 볼 수 있으나, 여전히 baked-in lighting 문제 존재
 
-![한계 예시 : 반사(reflection)를 따라 생성된 detail](../../../docs/assets/papers/texture/Detail_Enhancement_fig7.png)
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig7.png" alt="한계 예시 : 반사(reflection)를 따라 생성된 detail" width="550">
