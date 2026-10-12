@@ -10,11 +10,11 @@
 - 2D diffusion 기반 방법 : 여러 view를 순차적으로 생성·projection해야 하므로 속도가 느리고, view 간 불일치나 Janus problem 발생 가능
 - 기존 UV 생성 모델 : 특정 object category에 한정되며, 일반적인 3D object로의 확장이 어려움
 - Paint3D : 일반 object를 다루나 2단계 pipeline이며, 문제가 남음
-  - 초기 texture 생성에 test-time optimization 필요
+  - 초기 texture 생성에 per-instance optimization 필요(2D diffusion을 물체 하나에 대해 여러번 돌려서 반복 최적화)
   - 학습된 diffusion model은 lighting 제거와 hole filling만 수행
   - 단계 간 quality 손실이 누적되어 최종 detail 저하
 
-> **Janus problem** : 3D 물체의 여러 방향에 같은 semantic feature가 중복 생성되는 현상
+> **Janus problem** : 3D 물체의 여러 방향에 같은 semantic feature가 중복 생성되는 현상(뒤통수에 얼굴 생기거나, 잇몸 옆쪽에 앞니가 생기는 등)
 
 **목표**
 - Mesh + text + single-view image를 입력받아 전체 1024×1024 UV texture map을 직접 생성하는 general-purpose texture diffusion model 구축

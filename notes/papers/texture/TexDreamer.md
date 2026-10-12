@@ -22,7 +22,7 @@
   - video dataset은 multi-view 정보를 주나 frame 간 correspondence 정밀도가 요구되고 수량이 제한적
 
 **목표**
-- text와 image 모두 입력 가능한 zero-shot, 고품질 3D human texture 생성 모델
+- text와 image 모두 입력 가능한 고품질 3D human texture 생성 모델
 - 소량의 sample texture와 pretrained T2I(Text-to-Image) model의 generalization 능력을 활용하여, 일반적인 character 생성과 UV 구성 요소 사이의 연결 학습
 
 **기여**
@@ -90,9 +90,11 @@ LoRA : weight의 update가 낮은 "intrinsic rank"를 가진다는 점을 이용
 
 **Feature translator** (SD 쪽 text encoder 출력 공간으로 image feature를 변환)
 1. 렌더링된 2D 이미지 `y`를 CLIP image encoder `phi_i-enc`로 encoding → `f_voken`
-2. 2-layer MLP `phi_MLP`로 변환
+2. 2-layer MLP `phi_MLP`로 변환(projected features)
 3. 3-layer transformer decoder `phi_i-dec`가 learnable query `q`와 함께 처리
 4. 결과 `f_i2t`는 text feature와 같은 형태
+
+> 2-layer MLP, learnable query, 3-layer transformer decoder가 학습됨
 
 <img src="../../../docs/assets/papers/texture/TexDreamer_eq3.png" alt="논문 Eq. (3)" width="485">
 
@@ -100,7 +102,7 @@ LoRA : weight의 update가 낮은 "intrinsic rank"를 가진다는 점을 이용
 
 **학습**
 - `f_i2t`는 본질적으로 text feature이므로 T2UV 생성 과정에 condition으로 직접 사용 가능
-- 생성된 UV texture를 ground truth로 사용하고, 이를 LDM image encoder로 encoding한 `z_0`에 noise `epsilon`을 더해 `z_t` 생성
+- T2UV로 생성된 UV texture를 ground truth로 사용하고, 이를 LDM image encoder로 encoding한 `z_0`에 noise `epsilon`을 더해 `z_t` 생성
 - image encoder와 feature translator를 LDM denoise loss로 학습 (T2UV의 LoRA는 고정)
 
 <img src="../../../docs/assets/papers/texture/TexDreamer_eq4.png" alt="논문 Eq. (4)" width="513">

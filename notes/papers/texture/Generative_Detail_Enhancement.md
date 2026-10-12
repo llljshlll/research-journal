@@ -111,7 +111,7 @@ bias를 추가한 attention 수식 (논문 Eq. 2)
 
 <img src="../../../docs/assets/papers/texture/Detail_Enhancement_eq2.png" alt="논문 Eq. (2)" width="377">
 
-- 같은 3D surface를 바라보는 latent pixel pair (i, j)에 `B[i, j] = w`를 추가하여 서로 더 강하게 attention하도록 유도
+- 같은 3D surface를 바라보는 latent pixel pair (i, j)에 `B[i, j] = w`를 추가하여 서로 더 강하게 attention하도록 유도(w는 상수, 어떻게 설정 되어있는지 미공개(코드공개x))
 - 대응 관계가 없는 pair는 `B[i, j] = 0`
 - geometry와 camera가 이미 알려진 상태이므로, ray tracing + reprojection으로 correspondence를 사전에 계산하여 사용
 
@@ -182,7 +182,7 @@ bias를 추가한 attention 수식 (논문 Eq. 2)
 
 **기존 방법과의 정성 비교**
 
-<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig5.png" alt="논문 Fig. 5 : Kettle("Rusty scratched kettle")에서 기존 방법과의 비교" width="353">
+<img src="../../../docs/assets/papers/texture/Detail_Enhancement_fig5.png" alt="논문 Fig. 5 : Kettle (Rusty scratched kettle)에서 기존 방법과의 비교" width="353">
 
 **Ablation** : 아래 순서로 view consistency 향상
 1. ControlNet tile만 사용 : appearance는 바뀌나 view consistency 부족

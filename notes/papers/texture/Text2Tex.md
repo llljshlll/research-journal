@@ -25,12 +25,12 @@
 <img src="../../../docs/assets/papers/texture/Text2Tex_Fig2.png" alt="Text2Tex 전체 pipeline (Generation → Refinement)" width="800">
 
 전체 구조 : **generate-then-refine** 2단계
-- Generation : 미리 정한 6개 view를 순서대로 돌며 partial texture 생성 (Sec 3.3)
-- Refinement : 자동 선택한 view로 stretched/blurry 영역 보정 (Sec 3.4)
+- Generation : 미리 정한 6개 view를 순서대로 돌며 partial texture 생성
+- Refinement : 자동 선택한 view로 stretched/blurry 영역 보정
 
 ### 2-1. Depth-aware Diffusion
 
-- 일반 Text-to-Image 대신 Stable Diffusion v2 Depth2Image 사용
+- 일반 Text-to-Image 대신 Stable Diffusion v2 Depth2Image 사용(Stable Diffusion v2 Depth2Image는 stable diffusion이 depth를 조건으로 받도록 fine tuning 된 모델)
 - mesh의 depth를 condition으로 입력하여 geometry를 최대한 유지
 - Depth2Image는 이미지 전체를 생성하는 모델이므로, inpainting mask `M`을 sampling 과정에 주입하여 생성할 영역과 고정할 영역 지정
 - mask 적용 방식은 RePaint와 유사한 denoising guidance
@@ -38,7 +38,7 @@
 <img src="../../../docs/assets/papers/texture/Text2Tex_eq4.png" alt="논문 Eq. (4)" width="337">
 
 - `z_hat` : denoise된 latent 추정
-- `z_t` : noise가 추가된 기존 latent
+- `z_t` : noise가 추가된 기존 latent(이전에 생성된 이미지에 step t수준의 noise 입힌 것)
 - `M` : generation mask (1인 영역은 새로 생성, 0인 영역은 기존 내용 유지)
 
 ### 2-2. Progressive Texture Generation
@@ -61,6 +61,8 @@
 | Update | 이미 있으나 현재 view가 더 좋은 각도 | 현재 view의 similarity가 모든 view 중 최고 | 다시 생성/수정 | 0.5 (generation) / 0.3 (refinement) |
 | Keep | 이미 더 좋은 각도에서 생성됨 | 다른 view의 similarity가 더 높음 | 그대로 유지 | - |
 | Ignore | background | - | 무시 | - |
+
+> 배경은 M을 0으로 두고, 단색 유지하는지, 1로 두고 생성하다 버리는지 알 수 없음. 코드 봐야 알 수 있음. 생성여부와 상관없이 버려진다에 가까움
 
 <img src="../../../docs/assets/papers/texture/Text2Tex_Fig3.png" alt="New / Update / Keep / Ignore 영역 구분" width="450">
 
@@ -156,6 +158,7 @@ denoising strength `γ` (0 < γ ≤ 1)
 - diffusion backbone의 특성상 texture에 shading effect가 함께 생성되는 경향
 - prompt를 세심하게 조정하면 완화되나, 사람의 노력이 필요하여 대량 생성에는 부적합
 - 해결 방향으로 shading을 제거하도록 diffusion model을 fine-tuning하는 방법 제시 (future work)
+- 일관성 문제 해결을 보장하지는 않음
 - 이 문제가 Paint3D의 lighting-less texture 접근(UVHD)의 동기와 연결
 
 ## 추가사항

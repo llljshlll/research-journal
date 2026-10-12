@@ -31,6 +31,7 @@
 T = P(M, c) = F(C(M, c))
 ```
 
+- `T` : 최종 output, `P` : Paint3D 전체 framework
 - `M` : untextured mesh, `c` : appearance condition (text 또는 image)
 - `C` : coarse texture generation stage, `F` : texture refinement stage
 
@@ -43,6 +44,8 @@ T = P(M, c) = F(C(M, c))
 | `tau_i` | inpainting encoder |
 | `tau_p` | position encoder (새로 학습하는 부분) |
 | `tau_t` | image enhance(HD) encoder |
+
+<img src="../../../docs/assets/papers/texture/Point3D_fig3.png" alt="조명 정보가 포함된 texture(pre illumination)와 제거된 texture(free illumination)의 비교" width="700">
 
 ### 2-1. Coarse Texture Generation
 
@@ -99,8 +102,6 @@ T = P(M, c) = F(C(M, c))
 1. 여러 view에서 생성하는 과정에서, occluded region에 texture hole 발생 (self-occlusion)
 2. 2D diffusion 이미지에 그림자, 하이라이트 같은 조명 정보가 이미 포함됨
 
-<img src="../../../docs/assets/papers/texture/Point3D_fig3.png" alt="조명 정보가 포함된 texture(pre illumination)와 제거된 texture(free illumination)의 비교" width="700">
-
 두 문제를 해결하기 위해 아래 두 모델로 texture refinement 수행 (UV Inpainting → UVHD 순서)
 
 **UV space refinement의 어려움**
@@ -113,24 +114,29 @@ T = P(M, c) = F(C(M, c))
 - position map `O` : UV space에서 각 pixel이 3D 점 좌표(XYZ)를 담은 이미지
 - 기존 image diffusion model에 position map encoder `tau_p`를 추가
 - ControlNet 설계 원칙을 따라, 기존 encoder와 동일한 구조를 zero-convolution layer로 연결
-- 기존 denoiser는 freeze, position encoder `tau_p`만 학습
+- 기존 denoiser는 freeze, position encoder, controlNet `tau_p`만 학습
 - UV space의 texture는 원래 lighting-less이므로, 데이터 분포에서 lighting-less prior를 학습
 
 학습 loss
 
 <img src="../../../docs/assets/papers/texture/Paint3D_eq4.png" alt="논문 Eq. (4)" width="423">
 
+- 조건 : time step `t`, appearance condition `c`, position map `O`가 주어졌을 때, noisy latent `z_t`에 더해진 noise를 예측하도록 학습
+- `epsilon` : 더해진 noise (`epsilon ~ N(0,1)`), `epsilon_theta` : 학습된 denoiser가 예측한 noise
+- `epsilon_theta(z_t, t, c, tau_p(O))` : position map을 position encoder `tau_p`에 통과시킨 결과를 조건으로 사용
+- `epsilon_theta`는 freeze하고, Eq. (4)로 `tau_p`만 최적화
 - `T` : 기존 UV texture, `O` : UV에 XYZ를 rasterize한 position map (mesh 위 3D 위치 표현)
 - (T, O) pair를 만들어 `T`를 ground truth target, `O`를 condition으로 사용
 
 #### UV Inpainting
 
-: position map을 추가 condition으로 받아 UV map을 예측하는 ControlNet 모델
+: position map, inpaint를 각각 controlNet으로 처리
+
 
 - 목적 : rendering 중 projection이 닿지 않은 blind spot의 texture hole 채우기 (예 : 주름치마 안쪽)
 - ControlNet과 동일하게 기존 모델은 freeze, position map을 처리하는 부분만 학습
 - hole 부분에 대해서만 동작
-- UV space에서 수행하므로 occlusion 문제 없음
+- stable diffusion 1.5 모델 사용
 
 <img src="../../../docs/assets/papers/texture/Paint3D_fig8.png" alt="논문 Fig. 8 : UV Inpainting의 효과 (projection이 닿지 않는 blind spot의 hole 채움)" width="347">
 
@@ -144,12 +150,12 @@ T = P(M, c) = F(C(M, c))
 
 #### UVHD (UV High Definition)
 
-: blur, 낮은 detail, shadow, highlight 등 남은 문제를 처리하는 모델
+: blur, 낮은 detail, shadow, highlight 등 남은 문제를 처리하기 위함, tile controlNet과 position controlNet을 사용
 
-- ControlNet에서 제공하는 image high-definition domain encoder(`tau_t`) 사용
+- ControlNet에서 제공하는 image high-definition domain encoder(`tau_t`) 사용(= tile controlNet)
 - 3D object와 high-quality illumination-free texture를 supervision으로 학습
 - 학습 target 자체가 illumination-free UV texture이므로, diffusion이 해당 UV texture distribution을 학습하면 lighting-less prior 확보 가능하다는 논리
-- UV Inpainting과 달리 mask 입력 없음
+- UV Inpainting과 달리 mask 입력 없음, inpainting이 끝난 texture를 input으로 사용
 - 기존 texture detail을 강화하고, monochromatic 영역에는 새로운 texture까지 생성 가능
 
 <img src="../../../docs/assets/papers/texture/Paint3D_fig9.png" alt="논문 Fig. 9 : UVHD의 효과 (기존 detail 강화, monochromatic 영역에 새 texture 생성)" width="347">
@@ -169,7 +175,6 @@ T = P(M, c) = F(C(M, c))
 - backbone : Stable Diffusion v1.5 text2image
 - image condition : IP-Adapter의 image encoder 사용
 - depth, inpainting, high definition 조건 : ControlNet의 domain encoder 사용
-- denoising strength : coarse 단계 1, refinement 단계 0.75
 - PyTorch + Kaolin(rendering, texture projection)
 - UV unwarping : mesh에 UV 좌표가 있으면 원본 사용, 없으면 UV-Atlas 도구 사용
 
