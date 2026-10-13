@@ -8,7 +8,7 @@
 ## 1. 배경
 
 **목표**
-- 단일 reference image와 mesh에서 seam이 없고 전체 surface에 일관된 고품질 UV texture 생성
+- 단일 reference image와 mesh를 input으로, seam이 없고 전체 surface에 일관된 고품질 UV texture 생성
 - 사실적인 appearance와 3D surface 전체의 consistency를 동시에 만족
 
 **기존 방식의 문제**: 두 가지 paradigm 모두 한계 존재
@@ -16,10 +16,9 @@
 | 분류 | 방식 | 한계 |
 |---|---|---|
 | Multi-view projection | 2D diffusion으로 multi-view 이미지를 생성한 뒤 projection, baking, inpainting | multi-view inconsistency, projection 중 error 누적, seam과 misalignment, occluded/grazing-angle 영역을 커버하지 못함 |
-| UV space 직접 생성 | Point-UV Diffusion, TEXGen, TexGarment 등 | 3D 정보를 보조 module(point cloud attention, cross-attention)로 주입하나, 핵심 attention은 여전히 UV grid 위치 기준 |
+| UV space 직접 생성 | TEXGen, TexDreamer 등 | 3D 정보를 보조 module(point cloud attention, cross-attention)로 주입하나, 핵심 attention은 여전히 UV grid 위치 기준 |
 
 - 핵심 문제 : UV chart 사이에서 갈라진 texel(surface에서는 인접하나 UV에서는 멀리 떨어진 texel)을 attention이 관련짓지 못해 seam과 disconnected island 사이의 coherence 저하
-- 3D-aware RoPE(RomanTex, Hunyuan3D-2.1)는 multi-view image grid 기반이라 projection/baking 단계가 여전히 필요
 
 **핵심 아이디어**
 - positional encoding은 attention이 동작하는 distance metric을 정의하므로, 선택적으로 무시할 수 있는 condition과 달리 모델이 반드시 따르게 됨
@@ -41,6 +40,8 @@
   - CCM은 conditioning bundle `c`에 포함되지 않고, 오직 SAPE를 통해서만 모델에 들어감
 - 생성 target은 UV map 하나뿐이므로 intermediate view의 projection/blending이 만드는 inconsistency 제거
 
+<img src="../../../docs/assets/papers/texture/DirectUV_ccm.png" alt="논문 Fig. 1 (일부) : mesh wireframe을 rasterize하여 CCM (UV space에서 각 pixel이 3D surface 좌표)을 얻고, 이를 RoPE 좌표로 사용" width="650">
+
 ### 2-2. Latent UV Diffusion Formulation
 
 - UV map `I_UV`를 frozen Flux VAE encoder `E`로 공간적으로 downsample된 latent `x = E(I_UV)`로 변환, decoder `D`로 복원
@@ -49,6 +50,8 @@
 - 모델 `v_theta` : Flux DiT 구조 사용
 
 ### 2-3. Conditioning
+
+<img src="../../../docs/assets/papers/texture/DirectUV_cond.png" alt="논문 Fig. 1 (일부) : reference image는 CLIP(pooled)/DINOv2(patch token)로, coarse UV와 GT UV는 Flux VAE로 인코딩되어 channel concatenate" width="700">
 
 conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌표계를 공유하는지에 따라 주입 경로가 다름
 
@@ -62,6 +65,8 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 - image condition은 좌표 정렬이 없으므로 modulation과 cross-attention을 쓰고, coarse UV는 좌표계를 공유하므로 위치 정렬 경로를 씀
 - projection 기반 pipeline과 달리 둘 다 순수한 conditioning으로만 쓰이고, UV texture는 latent space에서 처음부터 생성되어 view-dependent inconsistency를 물려받지 않음
 
+<img src="../../../docs/assets/papers/texture/DirectUV_block.png" alt="논문 Fig. 1 (Block Details) : CLIP pooled feature와 timestep이 AdaLN modulation으로, UV token과 DINOv2 token이 joint self-attention(Q/K에 SAPE RoPE)으로 들어가는 DiT block 구조" width="300">
+
 ### 2-4. SAPE (Surface-Aware Positional Encoding)
 
 <img src="../../../docs/assets/papers/texture/DirectUV_fig2.png" alt="논문 Fig. 2 : SAPE와 Multi-Level SAPE의 메커니즘" width="550">
@@ -71,6 +76,8 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 - mesh에서는 바로 인접한 texel이 UV seam을 사이에 두고 서로 다른 island에 놓여 UV-grid metric에서는 임의로 멀어짐
 - 반대로 UV plane에서 가까운 texel이 실제로는 먼 surface 영역일 수 있음
 - 즉 attention이 잘못된 neighborhood prior를 받는 상태
+
+<img src="../../../docs/assets/papers/texture/DirectUV_fig2_left.png" alt="논문 Fig. 2 (Left) : UV seam으로 갈라진 token i, j가 surface에서는 인접하므로 SAPE가 surface 상의 거리로 직접 attention하게 함" width="380">
 
 **Surface-Aware RoPE (해결)**
 - 2D UV-grid positional encoding을 CCM에서 얻은 positional code로 교체
@@ -84,6 +91,8 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 - 따라서 surface에서 가까운 texel은 UV에서 떨어져 있어도 직접 attend 가능
 
 **Multi-Level SAPE**
+
+<img src="../../../docs/assets/papers/texture/DirectUV_fig2_right.png" alt="논문 Fig. 2 (Right) : 같은 latent patch를 level 0/1/2(1×1, 2×2, 4×4)로 읽고 head group마다 level별 sub-cell 좌표를 할당" width="380">
 - 문제 : token당 좌표 하나로는 UV island 사이의 넓은 surface 대응과 seam 주변의 미세한 구조를 동시에 포착 불가
 - 해결 : 같은 latent patch에 대해 CCM을 `L`개의 해상도로 읽음
   - level `l ∈ {0, ..., L-1}`에서 patch를 `2^l × 2^l`로 분할하여 token당 `4^l`개의 sub-cell 좌표 획득
@@ -99,6 +108,8 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 
 ### 2-5. Training과 Inference
 
+<img src="../../../docs/assets/papers/texture/DirectUV_fig1_train.png" alt="논문 Fig. 1 (위) : training pipeline - CLIP/DINOv2 image 인코딩, coarse UV와 GT UV의 VAE 인코딩, CCM 기반 RoPE 좌표, flow matching loss" width="800">
+
 **학습 objective** : rectified flow-matching
 
 - 깨끗한 latent `x`, noise `epsilon ~ N(0, I)`, timestep `t ∈ [0, 1]`에 대해 noisy latent `z_t = (1 - t) x + t epsilon`
@@ -107,6 +118,8 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 <img src="../../../docs/assets/papers/texture/DirectUV_eq2.png" alt="논문 Eq. (2)" width="500">
 
 - `t`는 [0, 1]에서 균등 샘플링, `w(t) ≡ 1` (uniform reweighting)
+
+<img src="../../../docs/assets/papers/texture/DirectUV_fig1_infer.png" alt="논문 Fig. 1 (아래) : inference pipeline - multi-view generator와 view-to-UV projection으로 coarse UV 생성, Euler loop로 denoise, Flux VAE decoder로 UV texture 복원" width="800">
 
 **Inference**
 1. reference image에서 off-the-shelf multi-view generator로 multi-view 이미지 생성 (Kiss3DGen 사용)
@@ -148,6 +161,8 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 - Hunyuan3D-2.1 : 3D-aware RoPE를 쓰는 multi-view 생성 후 UV baking
 - UniTEX : multi-view projection 후 triplane feature volume으로 completion
 
+<img src="../../../docs/assets/papers/texture/DirectUV_table1.png" alt="논문 Table 1 : GSO dataset에서의 정량 비교" width="500">
+
 **정량 결과 (GSO)**
 
 | Method | PSNR ↑ | SSIM ↑ | FID ↓ | KID ↓ |
@@ -169,6 +184,8 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 3. Multi-view inconsistency에 대한 robustness : UV latent에서 직접 denoise하므로 충돌하는 view에 휘둘리지 않음
    - 선풍기 예시에서 UniTEX는 뒷면 커버의 texture를 앞쪽 날개로 잘못 옮기나, DirectUV는 올바른 appearance 유지
    - UniTEX는 projection 결과를 inpainting의 target으로 취급하기 때문
+
+<img src="../../../docs/assets/papers/texture/DirectUV_table2.png" alt="논문 Table 2 : SAPE와 multi-level 설계의 ablation (GSO)" width="450">
 
 **Ablation**
 
@@ -211,6 +228,10 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 
 - Tripo, Rodin 같은 image-to-3D shape generator가 만든 mesh에 같은 image로 texturing하여 image-to-textured-mesh 전체 pipeline 구성
 - 생성 mesh의 다양한 topology와 UV layout 처리 가능
+
+**E. 추가 결과**
+
+<img src="../../../docs/assets/papers/texture/DirectUV_figA5.png" alt="논문 부록 Fig. 5 : 다양한 object category와 mesh 복잡도에 대한 추가 texture 생성 결과 (왼쪽부터 입력 geometry와 image, 렌더링된 texture)" width="500">
 
 ## 5. 한계
 
