@@ -11,7 +11,7 @@
 - 단일 reference image와 mesh를 input으로, seam이 없고 전체 surface에 일관된 고품질 UV texture 생성
 - 사실적인 appearance와 3D surface 전체의 consistency를 동시에 만족
 
-**기존 방식의 문제**: 두 가지 paradigm 모두 한계 존재
+**기존 방식의 문제**: 두 가지 방식 모두 한계 존재
 
 | 분류 | 방식 | 한계 |
 |---|---|---|
@@ -34,22 +34,25 @@
 
 ### 2-1. Overview
 
-- UV map을 pretrained image VAE의 latent로 인코딩하고, Diffusion Transformer(DiT)가 이 latent를 denoise
-- 입력 : reference image, UV parameterization이 있는 mesh
-- mesh에서 미리 한 번 계산하는 **CCM (Canonical Coordinate Map)** : UV space의 이미지로, 각 pixel 값이 대응하는 mesh 점의 3D surface 좌표
-  - CCM은 conditioning bundle `c`에 포함되지 않고, 오직 SAPE를 통해서만 모델에 들어감
-- 생성 target은 UV map 하나뿐이므로 intermediate view의 projection/blending이 만드는 inconsistency 제거
+<img src="../../../docs/assets/papers/texture/DirectUV_fig1.png" alt="논문 Fig. 1 : DirectUV 전체 pipeline (위 : training, 아래 : inference)" width="800">
 
-<img src="../../../docs/assets/papers/texture/DirectUV_ccm.png" alt="논문 Fig. 1 (일부) : mesh wireframe을 rasterize하여 CCM (UV space에서 각 pixel이 3D surface 좌표)을 얻고, 이를 RoPE 좌표로 사용" width="650">
+- Input : reference image, UV parameterization이 있는 mesh
+- flux 기반 모델 사용
+notes/models/flux/flux_architecture_analysis.md
+notes/models/flux/flux_overview.md
+(링크 달기)
+기존 flux 모델과 차이점
+기존 flux / Direct UV
+MMDiT Block 개수 / Single Stream Block 개수 / hidden Dimension / Head Dimension / Attention head
+표로 그리기
 
-### 2-2. Latent UV Diffusion Formulation
 
 - UV map `I_UV`를 frozen Flux VAE encoder `E`로 공간적으로 downsample된 latent `x = E(I_UV)`로 변환, decoder `D`로 복원
 - 이 표현은 pretrained 2D image prior와 정렬되고, VAE의 UV 복원 오차가 거의 없음
 - latent가 UV 좌표 구조를 유지하므로, 3D geometry가 보조 module이 아니라 positional encoding을 통해 들어갈 수 있음
 - 모델 `v_theta` : Flux DiT 구조 사용
 
-### 2-3. Conditioning
+### 2-2. Conditioning
 
 <img src="../../../docs/assets/papers/texture/DirectUV_cond.png" alt="논문 Fig. 1 (일부) : reference image는 CLIP(pooled)/DINOv2(patch token)로, coarse UV와 GT UV는 Flux VAE로 인코딩되어 channel concatenate" width="700">
 
@@ -61,6 +64,7 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 | Reference image (DINOv2 patch tokens) | 공간적으로 국소화된 detail | joint-attention stream에 입력 (원래 구조의 text token 자리를 대체), UV latent token이 관련 image 영역을 attend |
 | Coarse UV map | surface-aligned layout 단서 | 같은 Flux VAE로 인코딩하여 noisy UV latent와 channel 방향으로 concatenate (patchify 전, per-position 정렬 유지) |
 
+- 기존의 text가 들어가는 곳으로 Reference Image가 들어감
 - Coarse UV map : 하나 이상의 입력 view를 UV space로 projection하여 획득
 - image condition은 좌표 정렬이 없으므로 modulation과 cross-attention을 쓰고, coarse UV는 좌표계를 공유하므로 위치 정렬 경로를 씀
 - projection 기반 pipeline과 달리 둘 다 순수한 conditioning으로만 쓰이고, UV texture는 latent space에서 처음부터 생성되어 view-dependent inconsistency를 물려받지 않음
@@ -92,17 +96,17 @@ conditioning bundle `c`는 두 신호로 구성되며, 목표 texture와 UV 좌�
 
 **Multi-Level SAPE**
 
-<img src="../../../docs/assets/papers/texture/DirectUV_fig2_right.png" alt="논문 Fig. 2 (Right) : 같은 latent patch를 level 0/1/2(1×1, 2×2, 4×4)로 읽고 head group마다 level별 sub-cell 좌표를 할당" width="380">
-- 문제 : token당 좌표 하나로는 UV island 사이의 넓은 surface 대응과 seam 주변의 미세한 구조를 동시에 포착 불가
-- 해결 : 같은 latent patch에 대해 CCM을 `L`개의 해상도로 읽음
-  - level `l ∈ {0, ..., L-1}`에서 patch를 `2^l × 2^l`로 분할하여 token당 `4^l`개의 sub-cell 좌표 획득
-  - `l = 0`이 기본 SAPE (`S_i^(0) = S_i`)
-- 이 level별 좌표를 transformer의 head 차원에 분배
+<img src="../../../docs/assets/papers/texture/DirectUV_fig2_right.png" alt="논문 Fig. 2 (Right) : 같은 latent patch를 level 0/1/2(1×1, 2×2, 4×4)로 읽고 head group마다 level별 sub-cell 좌표를 할당" width="380">  
+- 문제 : token당 좌표 하나로는 UV island 사이의 넓은 surface 대응과 seam 주변의 미세한 구조를 동시에 포착 불가  
+- 해결 : 같은 latent patch에 대해 CCM을 `L`개의 해상도로 읽음  
+  - level `l ∈ {0, ..., L-1}`에서 patch를 `2^l × 2^l`로 분할하여 token당 `4^l`개의 sub-cell 좌표 획득  
+  - `l = 0`이 기본 SAPE (`S_i^(0) = S_i`)  
+- 이 level별 좌표를 transformer의 head 차원에 분배  
   - head `h`마다 level `l_h`와 해당 level 안의 sub-cell 하나를 할당
-  - 각 head는 자기 feature slice를 단일 granularity의 좌표 하나로만 회전 (여러 level을 겹쳐 쓰지 않음)
-- head의 조직 (`L = 3`) : `H`개의 head를 `G`개 group으로 묶고, 각 group은 level-1 layout의 sub-cell 하나에 대응
-  - group 안에서 head 1개는 level-0 좌표, 1개는 해당 group의 level-1 sub-cell, 나머지 4개는 그 안에 nested된 level-2 sub-cell을 읽음
-  - 전체 group이 level-1 layout을 분할하므로, 모든 level의 모든 sub-cell을 head 하나가 정확히 한 번 읽음
+  - 각 head는 자기 feature slice를 단일 granularity의 좌표 하나로만 회전 (여러 level을 겹쳐 쓰지 않음)  
+- head의 조직 (`L = 3`) : `H`개의 head를 `G`개 group으로 묶고, 각 group은 level-1 layout의 sub-cell 하나에 대응  
+  - group 안에서 head 1개는 level-0 좌표, 1개는 해당 group의 level-1 sub-cell, 나머지 4개는 그 안에 nested된 level-2 sub-cell을 읽음  
+  - 전체 group이 level-1 layout을 분할하므로, 모든 level의 모든 sub-cell을 head 하나가 정확히 한 번 읽음  
 - attention은 head별로 계산한 뒤 output projection에서 섞이므로, multi-level 정보는 attention 이후에 통합되고 attention 내부에서는 head마다 깨끗한 단일 granularity의 positional metric을 사용
 - 추가 latent map, parameter, 보조 geometry branch 없음
 
