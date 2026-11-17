@@ -6,6 +6,10 @@
 - [[attention]]
 - [[clip]]
 
+## Building Blocks
+
+- [[building-blocks/_index|Building Blocks]]
+
 ## 3D Reconstruction
 
 - [[gaussian-splatting]]
