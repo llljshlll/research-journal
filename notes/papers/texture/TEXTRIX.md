@@ -1,7 +1,6 @@
 # TEXTRIX — 논문 목적 및 Method 정리
 
 > **논문:** TEXTRIX: Latent Attribute Grid for Native Texture Generation and Beyond  
-> **근거:** Section 1, Section 3.1–3.4, Section 4, Figure 4–5, Equation (1)–(7)
 
 <img src="../../../docs/assets/papers/texture/TEXTRIX_fig1.png" alt="논문 Fig. 1 : TEXTRIX의 seamless texturing과 segmentation 결과" width="800">
 
@@ -42,7 +41,7 @@ Multi-view Image → DINOv2 Feature 추출 → 대응하는 3D Voxel에 투영 �
 
 ---
 
-## 2. Latent 3D Attribute Representation (Section 3.1)
+## 2. Latent 3D Attribute Representation
 
 ### 2.1 Native 3D Attribute Grid
 
@@ -102,7 +101,7 @@ UV Pixel (u,v)
 
 ---
 
-## 3. Attribute VAE (Section 3.2, Figure 4)
+## 3. Attribute VAE
 
 <img src="../../../docs/assets/papers/texture/TEXTRIX_fig4.png" alt="논문 Fig. 4 : VAE 구조 (UV texture를 grid로 투영, encoder, latent, decoder, interpolation)" width="800">
 
@@ -162,7 +161,7 @@ GT UV Texture
 
 ---
 
-## 4. Attribute DiT with Sparse Latent Conditioning (Section 3.3, Figure 5)
+## 4. Attribute DiT with Sparse Latent Conditioning
 
 <img src="../../../docs/assets/papers/texture/TEXTRIX_fig5.png" alt="논문 Fig. 5 : DiT 구조 (pose correction, 3D 투영, attribute encoder, DINOv3, attention)" width="800">
 
@@ -231,7 +230,7 @@ CLIP/DINO 등 일반적인 2D Image Feature만 사용하면 **이미지의 시�
 - GT Attribute Grid를 VAE Encoder로 인코딩한 **GT Latent**를 학습 타깃으로 사용하고, Noisy Sparse Latent와 Image Conditions를 통해 생성 방향을 학습하는 구조로 이해할 수 있음.
 - 원문에 Flow Matching의 구체적 수식과 Noise Sampling 세부 구현은 제시되지 않음.
 
-**Section 4 공개 설정:** 1,000 Training Timesteps, Condition Drop Probability 0.1(CFG 학습), AdamW, Learning Rate 1e-4, GPU당 Batch Size 16, A100 32개, 약 30,000 Iterations. 추론은 **15 Steps, CFG Scale 3.0**.
+**공개 설정:** 1,000 Training Timesteps, Condition Drop Probability 0.1(CFG 학습), AdamW, Learning Rate 1e-4, GPU당 Batch Size 16, A100 32개, 약 30,000 Iterations. 추론은 **15 Steps, CFG Scale 3.0**.
 
 ---
 
@@ -294,16 +293,3 @@ Reference Image → DINOv3 Image Features ────────────�
 ```
 
 **정리:** VAE는 **3D Attribute 표현의 압축·복원**을, DiT는 **조건부 3D Attribute Latent 생성**을 담당함. UV Position Map은 **VAE 학습의 Rendering Supervision**과 **최종 추론의 UV Texture 추출**에서 사용되며, **Front-view Position Map**은 입력 이미지를 3D Condition으로 변환할 때 사용됨.
-
----
-
-## 6. 확장 응용과 한계 (Section 3.4, Section 6)
-
-- **3D Part Segmentation:** Part별로 임의의 RGB Label Color를 GT UV Map에 부여한 뒤, 같은 Attribute Grid 기반 생성 구조로 Label Attribute를 예측. 추론 시 2D Segmentation 결과를 DINO Feature Similarity로 병합하고, 생성 결과에 Clustering을 적용해 최종 Part를 구분함.
-- **PBR Material Generation:** Roughness, Metallic, Normal 등의 속성으로 확장 가능한 표현. Figure 12에 결과가 있지만 **PBR 모델의 구체적 학습 설정은 공개되지 않음**.
-
-<img src="../../../docs/assets/papers/texture/TEXTRIX_fig12.png" alt="논문 Fig. 12 : PBR 생성 결과 (Roughness & Metallic 열은 R=metallic, G=roughness)" width="650">
-
-- **한계:** 입력 Mesh의 품질 및 Topology에 민감하며 Mesh Defect나 심한 Self-intersection에서 성능이 저하될 수 있음.
-
-**최종 핵심:** TEXTRIX의 주요 기여는 **① 3D Native Attribute Grid, ② 이를 압축·복원하는 Attribute VAE, ③ 입력 이미지 정보를 같은 3D Latent Space로 정렬해 전달하는 Sparse Latent Conditioning**의 결합임.
