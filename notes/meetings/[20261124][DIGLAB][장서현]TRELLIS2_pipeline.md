@@ -8,10 +8,10 @@ TRELLIS.2는 원래 이미지만으로 mesh까지 생성함. 우리는 mesh와 �
 
 | reference image | 생성 영상 |
 |---|---|
-| <img src="../../docs/assets/meetings/20261125/tooth1_image1.png" width="260"/> | <video src="https://github.com/user-attachments/assets/ef275de5-3d63-4915-8c4d-2c563089c07b" controls width="260"></video> |
-| <img src="../../docs/assets/meetings/20261125/tooth1_image2.png" width="260"/> | <video src="https://github.com/user-attachments/assets/bb41e40f-ca8d-4b63-bdc6-085199cd4936" controls width="260"></video> |
-| <img src="../../docs/assets/meetings/20261125/tooth2_image1.png" width="260"/> | <video src="https://github.com/user-attachments/assets/022e1f7f-7770-4c5b-9a05-5d9fbabdd15b" width="260" controls loop muted></video> |
-| <img src="../../docs/assets/meetings/20261125/tooth2_image2.png" width="260"/> | <video src="https://github.com/user-attachments/assets/a44d8aed-1fb1-4108-b7d6-288dc3f50fc8" width="260" controls loop muted></video> |
+| <img src="../../docs/assets/meetings/20261124/tooth1_image1.png" width="260"/> | <video src="https://github.com/user-attachments/assets/ef275de5-3d63-4915-8c4d-2c563089c07b" controls width="260"></video> |
+| <img src="../../docs/assets/meetings/20261124/tooth1_image2.png" width="260"/> | <video src="https://github.com/user-attachments/assets/bb41e40f-ca8d-4b63-bdc6-085199cd4936" controls width="260"></video> |
+| <img src="../../docs/assets/meetings/20261124/tooth2_image1.png" width="260"/> | <video src="https://github.com/user-attachments/assets/022e1f7f-7770-4c5b-9a05-5d9fbabdd15b" width="260" controls loop muted></video> |
+| <img src="../../docs/assets/meetings/20261124/tooth2_image2.png" width="260"/> | <video src="https://github.com/user-attachments/assets/a44d8aed-1fb1-4108-b7d6-288dc3f50fc8" width="260" controls loop muted></video> |
 
 **관찰**
 - TRELLIS.2는 자체적으로도 어느 정도 segmentation capability가 있음.
@@ -104,7 +104,7 @@ texture latent를 복셀별 PBR 값으로 복원하는 단계. 결과는 **복�
 2. **texel → 3D 좌표**: 2048×2048 텍스처 이미지의 texel마다 래스터화로 대응하는 mesh 표면의 3D 좌표를 구함
 3. **PBR 샘플링**: 그 좌표를 복셀 좌표 `(pos + 0.5) × resolution`로 바꿔 **trilinear 보간**으로 PBR 값을 읽음
 4. **여백 채우기**: UV 여백은 `cv2.inpaint`(Telea)로 채움 (base_color/alpha 반경 3, metallic/roughness 반경 1)
-5. **GLB 저장**: vertex·face·UV + 텍스처(base color+alpha, metallic/roughness)를 GLB로 저장 (WebP 확장 사용)
+5. **GLB 저장**: vertex·face·UV + 텍스처(base color+alpha, metallic/roughness)를 GLB로 저장
 
 
 ---
