@@ -8,11 +8,10 @@ TRELLIS.2는 원래 이미지만으로 mesh까지 생성함. 우리는 mesh와 �
 
 | reference image | 생성 영상 |
 |---|---|
-| <img src="../../docs/assets/meetings/20261125/tooth1_image1.png" width="260"/> | <video src="https://github.com/user-attachments/assets/a44d8aed-1fb1-4108-b7d6-288dc3f50fc8" controls width="260"></video> |
-| <img src="../../docs/assets/meetings/20261125/tooth1_image2.png" width="260"/> | <video src="https://github.com/user-attachments/assets/022e1f7f-7770-4c5b-9a05-5d9fbabdd15b
-" controls width="260"></video> |
-| <img src="../../docs/assets/meetings/20261125/tooth2_image1.png" width="260"/> | <video src="https://github.com/user-attachments/assets/bb41e40f-ca8d-4b63-bdc6-085199cd4936" width="260" controls loop muted></video> |
-| <img src="../../docs/assets/meetings/20261125/tooth2_image2.png" width="260"/> | <video src="https://github.com/user-attachments/assets/ef275de5-3d63-4915-8c4d-2c563089c07b" width="260" controls loop muted></video> |
+| <img src="../../docs/assets/meetings/20261125/tooth1_image1.png" width="260"/> | <video src="https://github.com/user-attachments/assets/ef275de5-3d63-4915-8c4d-2c563089c07b" controls width="260"></video> |
+| <img src="../../docs/assets/meetings/20261125/tooth1_image2.png" width="260"/> | <video src="https://github.com/user-attachments/assets/bb41e40f-ca8d-4b63-bdc6-085199cd4936" controls width="260"></video> |
+| <img src="../../docs/assets/meetings/20261125/tooth2_image1.png" width="260"/> | <video src="https://github.com/user-attachments/assets/022e1f7f-7770-4c5b-9a05-5d9fbabdd15b" width="260" controls loop muted></video> |
+| <img src="../../docs/assets/meetings/20261125/tooth2_image2.png" width="260"/> | <video src="https://github.com/user-attachments/assets/a44d8aed-1fb1-4108-b7d6-288dc3f50fc8" width="260" controls loop muted></video> |
 
 **관찰**
 - TRELLIS.2는 자체적으로도 어느 정도 segmentation capability가 있음.
