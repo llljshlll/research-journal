@@ -8,7 +8,7 @@ TRELLIS.2는 원래 이미지만으로 mesh까지 생성함. 우리는 mesh와 �
 
 | reference image | 생성 영상 |
 |---|---|
-| <img src="../../docs/assets/meetings/20261125/tooth1_image1.png" width="260"/> | <video src="../../docs/assets/meetings/20261125/tooth1_image1.mp4" width="260" controls loop muted></video> |
+| <img src="../../docs/assets/meetings/20261125/tooth1_image1.png" width="260"/> | <video "https://github.com/user-attachments/assets/a44d8aed-1fb1-4108-b7d6-288dc3f50fc8" controls width="320"></video> |
 | <img src="../../docs/assets/meetings/20261125/tooth1_image2.png" width="260"/> | <video src="../../docs/assets/meetings/20261125/tooth1_image2.mp4" width="260" controls loop muted></video> |
 | <img src="../../docs/assets/meetings/20261125/tooth2_image1.png" width="260"/> | <video src="../../docs/assets/meetings/20261125/tooth2_image1.mp4" width="260" controls loop muted></video> |
 | <img src="../../docs/assets/meetings/20261125/tooth2_image2.png" width="260"/> | <video src="../../docs/assets/meetings/20261125/tooth2_image2.mp4" width="260" controls loop muted></video> |
