@@ -13,6 +13,12 @@
 
 
 ## 1. Direct Preference Optimization (DPO) 방식
+치아 mesh의 vertex마다 semantic label은 있지만, 그 mesh에 대응하는 정답 텍스처는 없음 
+다만, 같은 mesh와 참조 이미지로 생성한 후보 A와 B를 보면, 어느 후보가 실제 치아·잇몸 경계를 더 잘 따르는지는 비교할 수 있음
+
+DPO의 학습 데이터는 같은 입력 조건, 선호 후보 A, 비선호 후보 B. 학습 전 모델을 기준 모델로 고정하고, 학습 모델이 B에 비해 A를 생성하는 쪽으로 기준 모델보다 더 기울도록 업데이트 하는 방식임
+A가 B보다 낫다는 비교 정보 사용, flow matching으로 백터의 방향을 학습하니까 더 그럴 수 있음
+모델의 prior이 이미 어느정도 GT에 가까운 이미지를 만들어 낼 수 있는 능력이 있을 때 사용 가능.
 
 ### SAM 3D: 3Dfy Anything in Images (Meta, CVPR 2026)
 - **참고 위치**: Appendix의 Algorithm 1 — SAM 3D Basic Alignment (Texture, Shape)
@@ -39,6 +45,7 @@
 #### 우리 논문에 반영할 방법
 **실제 vertex label을 후보 선택 기준으로 쓰기**
 - 동일 mesh와 동일 reference image를 고정하고 seed만 바꿔 텍스처 후보를 생성한 뒤, 각 후보의 렌더링에 실제 치아·잇몸 경계선을 겹쳐 봄
+- SFT용 후보와 DPO용 쌍의 채택 기준을 구분, SFT에는 단독으로도 학습 타깃으로 쓸 만큼 좋은 후보를 사용, DPO에는 후보 간 우열이 명확한 쌍을 사용
 - → 정답 RGB 없이도 어느 후보에서 잇몸색이 실제 경계를 넘어갔는지 판단할 수 있음
 
 
@@ -100,13 +107,14 @@ I(x_w) − I(x_l)이 클수록 σ 안의 값이 커져 loss가 작아짐. 위 �
 - **같은 noise, 같은 시점**: 선호·비선호 영상에 같은 noise와 시점을 쓰지만, 원래 latent가 다르므로 정답 velocity도 각각 달라짐. 따라서 이상적인 정답 영상이 없어도 두 후보 각각의 정답 velocity는 계산할 수 있음
 - **LoRA를 쓴 이유**: 전체 파라미터를 fine-tuning하면 성능이 떨어지거나 모델이 붕괴함. DPO를 너무 오래 학습해도 품질이 나빠짐(limitation)
 
+
 #### 우리 논문에 반영할 방법
 - 이 논문은 해당 loss로 LoRA 학습 전체를 직접 수행함
 - 우리도 controlNet이나 lora로 base model fine tuning
 
 
 ### Mesh-RFT (Enhancing Mesh Generation via Fine-grained Reinforcement Fine-Tuning, NeurIPS 2025)
-**Mesh DPO**: 같은 point cloud에서 생성한 두 mesh를 비교하되, 선호 mesh의 좋은 면과 비선호 mesh의 나쁜 면에 해당하는 토큰만 손실에 반영하는 post-training 방법
+**Mesh DPO**: 같은 point cloud에서 생성한 두 mesh를 비교하되, 선호 mesh의 좋은 면과 비선호 mesh의 나쁜 면에 해당하는 토큰만 손실에 반영, 기존 모델에 post-training
 - 선호 쌍을 사람 없이 객관적 지표로만 자동생성
 
 #### 1. 같은 point cloud에서 선호 쌍 구성
